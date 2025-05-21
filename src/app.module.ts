@@ -2,15 +2,17 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ReceiptsModule } from './receipts/receipts.module';
-import { DrizzleModule } from './db/drizzle.provider';
+import { ConfigModule } from '@nestjs/config';
+import { dbProvider } from './db/db.provider';
 
 @Module({
   imports: [
-    DrizzleModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     ReceiptsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, dbProvider],
 })
 export class AppModule {}
-// import { dotenv } from 'dotenv'; // Remove this line
