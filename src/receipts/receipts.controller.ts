@@ -5,6 +5,11 @@ import { ReceiptsService } from './receipts.service';
 export class ReceiptsController {
   constructor(private readonly receiptsService: ReceiptsService) {}
 
+  @Get()
+  async getAllReceipts() {
+    return await this.receiptsService.getAllReceipts();
+  }
+
   @Get(':verificationCode')
   async getReceipt(
     @Param('verificationCode') verificationCode: string,
@@ -18,5 +23,15 @@ export class ReceiptsController {
       return { error: 'Failed to get receipt data.' };
     }
     return receipt;
+  }
+
+  @Get(':id')
+  async getReceiptById(@Param('id') id: string) {
+    return await this.receiptsService.getReceiptById(+id);
+  }
+
+  @Get('by-company/:companyName')
+  async getReceiptsByCompanyName(@Param('companyName') companyName: string) {
+    return await this.receiptsService.getReceiptsByCompanyName(companyName);
   }
 }

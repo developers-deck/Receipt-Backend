@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const playwright_1 = require("playwright");
 const db_provider_1 = require("../db/db.provider");
 const schema_1 = require("../db/schema");
+const drizzle_orm_1 = require("drizzle-orm");
 let ReceiptsService = class ReceiptsService {
     db;
     browser = null;
@@ -32,6 +33,17 @@ let ReceiptsService = class ReceiptsService {
         if (this.browser) {
             await this.browser.close();
         }
+    }
+    async getAllReceipts() {
+        const allReceipts = await this.db.select().from(schema_1.receipts);
+        const receiptIds = allReceipts.map(r => r.id);
+        const allItems = receiptIds.length > 0
+            ? await this.db.select().from(schema_1.purchasedItems).where((0, drizzle_orm_1.inArray)(schema_1.purchasedItems.receiptId, receiptIds))
+            : [];
+        return allReceipts.map(receipt => ({
+            ...receipt,
+            items: allItems.filter(item => item.receiptId === receipt.id)
+        }));
     }
     async getReceipt(verificationCode, receiptTime) {
         if (!this.page) {
@@ -208,6 +220,28 @@ let ReceiptsService = class ReceiptsService {
             console.error('Error during scraping:', error);
             return null;
         }
+    }
+    async getReceiptById(id) {
+        const receipt = await this.db.select().from(schema_1.receipts).where((0, drizzle_orm_1.eq)(schema_1.receipts.id, id)).limit(1);
+        if (!receipt || receipt.length === 0) {
+            return null;
+        }
+        const purchasedItemsForReceipt = await this.db.select().from(schema_1.purchasedItems).where((0, drizzle_orm_1.eq)(schema_1.purchasedItems.receiptId, id));
+        return { ...receipt[0], items: purchasedItemsForReceipt };
+    }
+    async getReceiptsByCompanyName(companyName) {
+        const matchingReceipts = await this.db.select().from(schema_1.receipts).where((0, drizzle_orm_1.eq)(schema_1.receipts.companyName, companyName));
+        if (!matchingReceipts || matchingReceipts.length === 0) {
+            return [];
+        }
+        const receiptIds = matchingReceipts.map(r => r.id);
+        const allItems = receiptIds.length > 0
+            ? await this.db.select().from(schema_1.purchasedItems).where((0, drizzle_orm_1.inArray)(schema_1.purchasedItems.receiptId, receiptIds))
+            : [];
+        return matchingReceipts.map(receipt => ({
+            ...receipt,
+            items: allItems.filter(item => item.receiptId === receipt.id)
+        }));
     }
 };
 exports.ReceiptsService = ReceiptsService;

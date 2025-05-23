@@ -2,6 +2,39 @@ import { ReceiptsService } from './receipts.service';
 export declare class ReceiptsController {
     private readonly receiptsService;
     constructor(receiptsService: ReceiptsService);
+    getAllReceipts(): Promise<{
+        items: {
+            id: number;
+            receiptId: number;
+            description: string | null;
+            quantity: string | null;
+            amount: string | null;
+            createdAt: Date | null;
+        }[];
+        id: number;
+        companyName: string | null;
+        poBox: string | null;
+        mobile: string | null;
+        tin: string | null;
+        vrn: string | null;
+        serialNo: string | null;
+        uin: string | null;
+        taxOffice: string | null;
+        customerName: string | null;
+        customerIdType: string | null;
+        customerId: string | null;
+        customerMobile: string | null;
+        receiptNo: string | null;
+        zNumber: string | null;
+        receiptDate: string | null;
+        receiptTime: string | null;
+        totalExclTax: string | null;
+        totalTax: string | null;
+        totalInclTax: string | null;
+        verificationCode: string;
+        verificationCodeUrl: string | null;
+        createdAt: Date | null;
+    }[]>;
     getReceipt(verificationCode: string, receiptTime: string): Promise<{
         verificationCode: string;
         id?: number | undefined;
@@ -29,4 +62,70 @@ export declare class ReceiptsController {
     } | {
         error: string;
     }>;
+    getReceiptById(id: string): Promise<{
+        items: {
+            id: number;
+            receiptId: number;
+            description: string | null;
+            quantity: string | null;
+            amount: string | null;
+            createdAt: Date | null;
+        }[];
+        id: number;
+        companyName: string | null;
+        poBox: string | null;
+        mobile: string | null;
+        tin: string | null;
+        vrn: string | null;
+        serialNo: string | null;
+        uin: string | null;
+        taxOffice: string | null;
+        customerName: string | null;
+        customerIdType: string | null;
+        customerId: string | null;
+        customerMobile: string | null;
+        receiptNo: string | null;
+        zNumber: string | null;
+        receiptDate: string | null;
+        receiptTime: string | null;
+        totalExclTax: string | null;
+        totalTax: string | null;
+        totalInclTax: string | null;
+        verificationCode: string;
+        verificationCodeUrl: string | null;
+        createdAt: Date | null;
+    } | null>;
+    getReceiptsByCompanyName(companyName: string): Promise<{
+        items: {
+            id: number;
+            receiptId: number;
+            description: string | null;
+            quantity: string | null;
+            amount: string | null;
+            createdAt: Date | null;
+        }[];
+        id: number;
+        companyName: string | null;
+        poBox: string | null;
+        mobile: string | null;
+        tin: string | null;
+        vrn: string | null;
+        serialNo: string | null;
+        uin: string | null;
+        taxOffice: string | null;
+        customerName: string | null;
+        customerIdType: string | null;
+        customerId: string | null;
+        customerMobile: string | null;
+        receiptNo: string | null;
+        zNumber: string | null;
+        receiptDate: string | null;
+        receiptTime: string | null;
+        totalExclTax: string | null;
+        totalTax: string | null;
+        totalInclTax: string | null;
+        verificationCode: string;
+        verificationCodeUrl: string | null;
+        createdAt: Date | null;
+    }[]>;
 }

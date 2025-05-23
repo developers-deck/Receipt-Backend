@@ -20,6 +20,9 @@ let ReceiptsController = class ReceiptsController {
     constructor(receiptsService) {
         this.receiptsService = receiptsService;
     }
+    async getAllReceipts() {
+        return await this.receiptsService.getAllReceipts();
+    }
     async getReceipt(verificationCode, receiptTime) {
         if (!receiptTime) {
             return { error: 'Receipt time is required.' };
@@ -30,8 +33,20 @@ let ReceiptsController = class ReceiptsController {
         }
         return receipt;
     }
+    async getReceiptById(id) {
+        return await this.receiptsService.getReceiptById(+id);
+    }
+    async getReceiptsByCompanyName(companyName) {
+        return await this.receiptsService.getReceiptsByCompanyName(companyName);
+    }
 };
 exports.ReceiptsController = ReceiptsController;
+__decorate([
+    (0, common_1.Get)(),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], ReceiptsController.prototype, "getAllReceipts", null);
 __decorate([
     (0, common_1.Get)(':verificationCode'),
     __param(0, (0, common_1.Param)('verificationCode')),
@@ -40,6 +55,20 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], ReceiptsController.prototype, "getReceipt", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], ReceiptsController.prototype, "getReceiptById", null);
+__decorate([
+    (0, common_1.Get)('by-company/:companyName'),
+    __param(0, (0, common_1.Param)('companyName')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], ReceiptsController.prototype, "getReceiptsByCompanyName", null);
 exports.ReceiptsController = ReceiptsController = __decorate([
     (0, common_1.Controller)('receipts'),
     __metadata("design:paramtypes", [receipts_service_1.ReceiptsService])

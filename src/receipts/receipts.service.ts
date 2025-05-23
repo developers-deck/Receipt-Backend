@@ -3,6 +3,7 @@ import { chromium, Browser, Page } from 'playwright';
 import { DB_PROVIDER, DbService } from '../db/db.provider'; // Import DB_PROVIDER and DbService
 import { receipts, NewReceipt, purchasedItems } from '../db/schema';
 import { DbType } from '../db';
+import { inArray, eq } from 'drizzle-orm';
 
 @Injectable()
 export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
@@ -20,6 +21,18 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     if (this.browser) {
       await this.browser.close();
     }
+  }
+
+  async getAllReceipts() {
+    const allReceipts = await this.db.select().from(receipts);
+    const receiptIds = allReceipts.map(r => r.id);
+    const allItems = receiptIds.length > 0
+      ? await this.db.select().from(purchasedItems).where(inArray(purchasedItems.receiptId, receiptIds))
+      : [];
+    return allReceipts.map(receipt => ({
+      ...receipt,
+      items: allItems.filter(item => item.receiptId === receipt.id)
+    }));
   }
 
   async getReceipt(verificationCode: string, receiptTime: string): Promise<NewReceipt | null> {
@@ -246,5 +259,29 @@ console.log('Extracted extractedReceiptTime:', extractedReceiptTime);
       // await browser.close(); // Removed browser close
       return null;
     }
+  }
+
+  async getReceiptById(id: number) {
+    const receipt = await this.db.select().from(receipts).where(eq(receipts.id, id)).limit(1);
+    if (!receipt || receipt.length === 0) {
+      return null;
+    }
+    const purchasedItemsForReceipt = await this.db.select().from(purchasedItems).where(eq(purchasedItems.receiptId, id));
+    return { ...receipt[0], items: purchasedItemsForReceipt };
+  }
+
+  async getReceiptsByCompanyName(companyName: string) {
+    const matchingReceipts = await this.db.select().from(receipts).where(eq(receipts.companyName, companyName));
+    if (!matchingReceipts || matchingReceipts.length === 0) {
+      return [];
+    }
+    const receiptIds = matchingReceipts.map(r => r.id);
+    const allItems = receiptIds.length > 0
+      ? await this.db.select().from(purchasedItems).where(inArray(purchasedItems.receiptId, receiptIds))
+      : [];
+    return matchingReceipts.map(receipt => ({
+      ...receipt,
+      items: allItems.filter(item => item.receiptId === receipt.id)
+    }));
   }
 }
