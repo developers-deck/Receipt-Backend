@@ -7,8 +7,8 @@ const dbProvider: Provider = {
   provide: DB_PROVIDER,
   useFactory: async () => {
     const client = postgres(process.env.DATABASE_URL || {
-      host: 'localhost',
-      port: 5432,
+      host: '130.61.179.9',
+      port: 5488,
       database: 'postgres',
       username: 'postgres',
       password: 'icui4cu'
