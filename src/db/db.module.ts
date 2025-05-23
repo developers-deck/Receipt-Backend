@@ -1,12 +1,18 @@
 import { Module, Provider } from '@nestjs/common';
 import { DB_PROVIDER, DbService } from './db.provider';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import * as postgres from 'postgres';
+const postgres = require('postgres');
 
 const dbProvider: Provider = {
   provide: DB_PROVIDER,
   useFactory: async () => {
-    const client = postgres.default(process.env.DATABASE_URL || 'YOUR_DATABASE_URL'); // Replace with your actual connection string or environment variable
+    const client = postgres(process.env.DATABASE_URL || {
+      host: 'localhost',
+      port: 5432,
+      database: 'postgres',
+      username: 'postgres',
+      password: 'icui4cu'
+    });
     return drizzle(client);
   },
 };

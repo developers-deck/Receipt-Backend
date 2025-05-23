@@ -10,11 +10,17 @@ exports.DbModule = void 0;
 const common_1 = require("@nestjs/common");
 const db_provider_1 = require("./db.provider");
 const postgres_js_1 = require("drizzle-orm/postgres-js");
-const postgres_1 = require("postgres");
+const postgres = require('postgres');
 const dbProvider = {
     provide: db_provider_1.DB_PROVIDER,
     useFactory: async () => {
-        const client = (0, postgres_1.default)(process.env.DATABASE_URL || 'YOUR_DATABASE_URL');
+        const client = postgres(process.env.DATABASE_URL || {
+            host: 'localhost',
+            port: 5432,
+            database: 'postgres',
+            username: 'postgres',
+            password: 'icui4cu'
+        });
         return (0, postgres_js_1.drizzle)(client);
     },
 };
