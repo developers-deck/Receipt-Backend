@@ -1,4 +1,4 @@
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from './schema';
-export declare const db: import("drizzle-orm/node-postgres").NodePgDatabase<typeof schema> & {
-    $client: any;
-};
+export type DbType = ReturnType<typeof drizzle<typeof schema>>;
+export { schema };

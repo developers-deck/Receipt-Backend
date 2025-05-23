@@ -11,14 +11,21 @@ const common_1 = require("@nestjs/common");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const receipts_module_1 = require("./receipts/receipts.module");
+const config_1 = require("@nestjs/config");
+const db_provider_1 = require("./db/db.provider");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [receipts_module_1.ReceiptsModule],
+        imports: [
+            config_1.ConfigModule.forRoot({
+                isGlobal: true,
+            }),
+            receipts_module_1.ReceiptsModule,
+        ],
         controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService],
+        providers: [app_service_1.AppService, db_provider_1.dbProvider],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map
