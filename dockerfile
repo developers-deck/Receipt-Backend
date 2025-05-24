@@ -11,15 +11,19 @@ COPY package.json pnpm-lock.yaml* ./
 # Install dependencies
 RUN pnpm install
 
-# Copy source files
-COPY tsconfig.json tsconfig.build.json nest-cli.json ./
-COPY src/ ./src/
+# Copy all files
+COPY . .
+
+# Debug: Show directory structure
+RUN echo "=== Directory Structure ===" && \
+    find . -type f -name "*.ts" && \
+    echo "=== Source Directory ===" && \
+    find ./src -type f
 
 # Build
-RUN pnpm run build
-
-# Debug: List contents
-RUN ls -la dist/
+RUN pnpm run build && \
+    echo "=== Build Output ===" && \
+    find ./dist -type f
 
 # Start
 CMD ["node", "dist/main.js"]
