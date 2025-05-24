@@ -14,16 +14,11 @@ RUN pnpm install
 # Copy all files
 COPY . .
 
-# Debug: Show directory structure
-RUN echo "=== Directory Structure ===" && \
-    find . -type f -name "*.ts" && \
-    echo "=== Source Directory ===" && \
-    find ./src -type f
-
-# Build
-RUN pnpm run build && \
+# Clean dist directory and build
+RUN rm -rf dist && \
+    pnpm run build && \
     echo "=== Build Output ===" && \
     find ./dist -type f
 
 # Start
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
