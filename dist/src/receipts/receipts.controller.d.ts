@@ -5,11 +5,11 @@ export declare class ReceiptsController {
     getAllReceipts(): Promise<{
         items: {
             id: number;
+            createdAt: Date | null;
             receiptId: number;
             description: string | null;
             quantity: string | null;
             amount: string | null;
-            createdAt: Date | null;
         }[];
         id: number;
         companyName: string | null;
@@ -65,11 +65,11 @@ export declare class ReceiptsController {
     getReceiptById(id: string): Promise<{
         items: {
             id: number;
+            createdAt: Date | null;
             receiptId: number;
             description: string | null;
             quantity: string | null;
             amount: string | null;
-            createdAt: Date | null;
         }[];
         id: number;
         companyName: string | null;
@@ -98,11 +98,11 @@ export declare class ReceiptsController {
     getReceiptsByCompanyName(companyName: string): Promise<{
         items: {
             id: number;
+            createdAt: Date | null;
             receiptId: number;
             description: string | null;
             quantity: string | null;
             amount: string | null;
-            createdAt: Date | null;
         }[];
         id: number;
         companyName: string | null;

@@ -11,11 +11,11 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     getAllReceipts(): Promise<{
         items: {
             id: number;
+            createdAt: Date | null;
             receiptId: number;
             description: string | null;
             quantity: string | null;
             amount: string | null;
-            createdAt: Date | null;
         }[];
         id: number;
         companyName: string | null;
@@ -45,11 +45,11 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     getReceiptById(id: number): Promise<{
         items: {
             id: number;
+            createdAt: Date | null;
             receiptId: number;
             description: string | null;
             quantity: string | null;
             amount: string | null;
-            createdAt: Date | null;
         }[];
         id: number;
         companyName: string | null;
@@ -78,11 +78,11 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     getReceiptsByCompanyName(companyName: string): Promise<{
         items: {
             id: number;
+            createdAt: Date | null;
             receiptId: number;
             description: string | null;
             quantity: string | null;
             amount: string | null;
-            createdAt: Date | null;
         }[];
         id: number;
         companyName: string | null;
