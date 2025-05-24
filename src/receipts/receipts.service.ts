@@ -13,8 +13,17 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
   constructor(@Inject(DB_PROVIDER) private db: DbType) {} // Inject Drizzle ORM instance
 
   async onModuleInit() {
-    this.browser = await chromium.launch();
-    this.page = await this.browser.newPage();
+    try {
+      this.browser = await chromium.launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        executablePath: process.env.CHROME_BIN || undefined
+      });
+      this.page = await this.browser.newPage();
+    } catch (error) {
+      console.error('Failed to initialize Playwright:', error);
+      // Don't throw the error, just log it
+      // This allows the application to start even if Playwright fails
+    }
   }
 
   async onModuleDestroy() {
