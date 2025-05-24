@@ -1,24 +1,3 @@
-# Build stage
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-# Install pnpm
-RUN npm install -g pnpm
-
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
-
-# Install ALL dependencies (including devDependencies)
-RUN pnpm install
-
-# Copy all source files
-COPY . .
-
-# Build the application
-RUN pnpm run build
-
-# Production stage
 FROM node:20-alpine
 
 WORKDIR /app
@@ -29,14 +8,18 @@ RUN npm install -g pnpm
 # Copy package files
 COPY package.json pnpm-lock.yaml* ./
 
-# Install only production dependencies
-RUN pnpm install --prod
+# Install dependencies
+RUN pnpm install
 
-# Copy built application from builder stage
-COPY --from=builder /app/dist ./dist
+# Copy source files
+COPY tsconfig.json tsconfig.build.json nest-cli.json ./
+COPY src/ ./src/
 
-# Debug: List contents of dist directory
+# Build
+RUN pnpm run build
+
+# Debug: List contents
 RUN ls -la dist/
 
-# Start the application
+# Start
 CMD ["node", "dist/main.js"]
