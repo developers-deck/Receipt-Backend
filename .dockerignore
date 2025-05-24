@@ -5,6 +5,8 @@ dist
 .gitignore
 .env
 .env.*
+*.log
+.DS_Store
 *.md
 .vscode
 .idea
