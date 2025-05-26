@@ -26,8 +26,49 @@ let ReceiptsService = class ReceiptsService {
         this.db = db;
     }
     async onModuleInit() {
-        this.browser = await playwright_1.chromium.launch();
-        this.page = await this.browser.newPage();
+        await this.initializeBrowser();
+    }
+    async initializeBrowser() {
+        try {
+            if (this.browser) {
+                console.log('Closing existing Playwright browser instance.');
+                await this.browser.close();
+                this.browser = null;
+                this.page = null;
+            }
+            console.log('Attempting to launch Playwright browser...');
+            this.browser = await playwright_1.chromium.launch({
+                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+                executablePath: process.env.CHROME_BIN || undefined,
+                headless: true,
+                timeout: 60000
+            });
+            console.log('Playwright browser launched. Creating new page...');
+            this.page = await this.browser.newPage();
+            console.log('Playwright browser and page initialized successfully.');
+        }
+        catch (error) {
+            console.error('Failed to initialize Playwright:', error);
+            if (this.page) {
+                try {
+                    await this.page.close();
+                }
+                catch (closePageError) {
+                    console.error('Error closing page during cleanup:', closePageError);
+                }
+                this.page = null;
+            }
+            if (this.browser) {
+                try {
+                    await this.browser.close();
+                }
+                catch (closeBrowserError) {
+                    console.error('Error closing browser during cleanup:', closeBrowserError);
+                }
+                this.browser = null;
+            }
+            throw error;
+        }
     }
     async onModuleDestroy() {
         if (this.browser) {
@@ -47,8 +88,12 @@ let ReceiptsService = class ReceiptsService {
     }
     async getReceipt(verificationCode, receiptTime) {
         if (!this.page) {
-            console.error('Playwright page not initialized.');
-            return null;
+            console.log('Playwright page not initialized. Attempting to reinitialize...');
+            await this.initializeBrowser();
+            if (!this.page) {
+                console.error('Failed to initialize Playwright page after retry.');
+                return null;
+            }
         }
         const page = this.page;
         try {

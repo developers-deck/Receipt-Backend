@@ -13,16 +13,50 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
   constructor(@Inject(DB_PROVIDER) private db: DbType) {} // Inject Drizzle ORM instance
 
   async onModuleInit() {
+    await this.initializeBrowser();
+  }
+
+  private async initializeBrowser() {
     try {
+      if (this.browser) {
+        console.log('Closing existing Playwright browser instance.');
+        await this.browser.close();
+        this.browser = null; // Ensure it's nullified before attempting to re-launch
+        this.page = null;
+      }
+      
+      console.log('Attempting to launch Playwright browser...');
       this.browser = await chromium.launch({
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        executablePath: process.env.CHROME_BIN || undefined
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'], // Added --disable-gpu
+        executablePath: process.env.CHROME_BIN || undefined,
+        headless: true,
+        timeout: 60000 // Added a timeout for launch
       });
+      console.log('Playwright browser launched. Creating new page...');
+      
       this.page = await this.browser.newPage();
+      console.log('Playwright browser and page initialized successfully.');
     } catch (error) {
       console.error('Failed to initialize Playwright:', error);
-      // Don't throw the error, just log it
-      // This allows the application to start even if Playwright fails
+      // Clean up potentially partially initialized resources
+      if (this.page) {
+        try {
+          await this.page.close();
+        } catch (closePageError) {
+          console.error('Error closing page during cleanup:', closePageError);
+        }
+        this.page = null;
+      }
+      if (this.browser) {
+        try {
+          await this.browser.close();
+        } catch (closeBrowserError) {
+          console.error('Error closing browser during cleanup:', closeBrowserError);
+        }
+        this.browser = null;
+      }
+      // Re-throw the error to ensure NestJS knows initialization failed
+      throw error; 
     }
   }
 
@@ -46,8 +80,13 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
 
   async getReceipt(verificationCode: string, receiptTime: string): Promise<NewReceipt | null> {
     if (!this.page) {
-      console.error('Playwright page not initialized.');
-      return null;
+      console.log('Playwright page not initialized. Attempting to reinitialize...');
+      await this.initializeBrowser();
+      
+      if (!this.page) {
+        console.error('Failed to initialize Playwright page after retry.');
+        return null;
+      }
     }
     const page = this.page;
 

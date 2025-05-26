@@ -7,6 +7,7 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     private page;
     constructor(db: DbType);
     onModuleInit(): Promise<void>;
+    private initializeBrowser;
     onModuleDestroy(): Promise<void>;
     getAllReceipts(): Promise<{
         items: {
