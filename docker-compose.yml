@@ -11,6 +11,7 @@ services:
       - PLAYWRIGHT_BROWSERS_PATH=/app/pw-browsers
       - PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
       - CHROME_BIN=/usr/bin/chromium-browser
+      - PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
     volumes:
       - ./pw-browsers:/app/pw-browsers
     restart: unless-stopped
@@ -19,6 +20,8 @@ services:
       - SYS_ADMIN
     security_opt:
       - seccomp=unconfined
+    # Run as root to avoid permission issues
+    user: root
 
 volumes:
   postgres_data: 

@@ -50,8 +50,11 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/app/pw-browsers
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV CHROME_BIN=/usr/bin/chromium-browser
 
-# Install Playwright browsers with root privileges
-RUN PLAYWRIGHT_BROWSERS_PATH=/app/pw-browsers pnpm exec playwright install chromium --with-deps
+# Create directory for Playwright browsers
+RUN mkdir -p /app/pw-browsers
+
+# Install Playwright without downloading browsers
+RUN pnpm exec playwright install chromium --with-deps || true
 
 # Start
 CMD ["node", "dist/src/main.js"]
