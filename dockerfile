@@ -49,12 +49,13 @@ RUN pnpm run build
 ENV PLAYWRIGHT_BROWSERS_PATH=/app/pw-browsers
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV CHROME_BIN=/usr/bin/chromium-browser
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Create directory for Playwright browsers
 RUN mkdir -p /app/pw-browsers
 
-# Install Playwright without downloading browsers
-RUN pnpm exec playwright install chromium --with-deps || true
+# Create a symbolic link to the system Chromium
+RUN ln -s /usr/bin/chromium-browser /app/pw-browsers/chromium
 
 # Start
 CMD ["node", "dist/src/main.js"]

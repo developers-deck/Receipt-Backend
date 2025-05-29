@@ -12,6 +12,7 @@ services:
       - PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
       - CHROME_BIN=/usr/bin/chromium-browser
       - PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+      - PLAYWRIGHT_SKIP_VALIDATION=1
     volumes:
       - ./pw-browsers:/app/pw-browsers
     restart: unless-stopped
