@@ -28,7 +28,56 @@ RUN apk add --no-cache \
     # Required for Playwright
     python3 \
     make \
-    g++
+    g++ \
+    # Additional Chromium dependencies
+    atk \
+    cups \
+    dbus \
+    gtk+3.0 \
+    libdrm \
+    libxcomposite \
+    libxdamage \
+    libxrandr \
+    xdg-utils \
+    alsa-lib \
+    libxss \
+    libxtst \
+    liberation-fonts \
+    libappindicator \
+    mesa-gbm \
+    # Additional system libraries
+    at-spi2-atk \
+    at-spi2-core \
+    cairo \
+    cups-libs \
+    dbus-libs \
+    expat \
+    fontconfig \
+    freetype \
+    gdk-pixbuf \
+    glib \
+    gtk+3.0 \
+    libX11 \
+    libXcomposite \
+    libXcursor \
+    libXdamage \
+    libXext \
+    libXfixes \
+    libXi \
+    libXrandr \
+    libXrender \
+    libXss \
+    libXtst \
+    libxcb \
+    libxkbcommon \
+    libxshmfence \
+    mesa-dri-gallium \
+    mesa-va-gallium \
+    mesa-vdpau-gallium \
+    pango \
+    pixman \
+    wayland \
+    xorg-server
 
 # Install pnpm
 RUN npm install -g pnpm@10.11.0
