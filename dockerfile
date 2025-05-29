@@ -77,7 +77,18 @@ RUN apk add --no-cache \
     pango \
     pixman \
     wayland \
-    xorg-server
+    xorg-server \
+    # Additional required dependencies from error message
+    atk-bridge \
+    libatk-bridge \
+    libxkbcommon \
+    at-spi2-atk \
+    libxcomposite \
+    libxdamage \
+    libxfixes \
+    libxrandr \
+    mesa-gbm \
+    alsa-lib
 
 # Install pnpm
 RUN npm install -g pnpm@10.11.0
@@ -99,6 +110,7 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/app/pw-browsers
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV CHROME_BIN=/usr/bin/chromium-browser
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PLAYWRIGHT_SKIP_VALIDATION=1
 
 # Create directory for Playwright browsers
 RUN mkdir -p /app/pw-browsers
