@@ -1,8 +1,9 @@
 build:
   buildpacks:
-    - url: heroku/nodejs
+    - url: https://buildpack-registry.s3.amazonaws.com/buildpacks/heroku/nodejs.tgz
     - url: https://github.com/mxschmitt/heroku-playwright-buildpack
   config:
     NPM_CONFIG_PRODUCTION: false
     NODE_ENV: production
-    PNPM_VERSION: 10.11.0 
+    PNPM_VERSION: 10.11.0
+    USE_NPM_INSTALL: false
