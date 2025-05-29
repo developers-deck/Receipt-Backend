@@ -34,10 +34,10 @@ RUN apk add --no-cache \
 RUN npm install -g pnpm@10.11.0
 
 # Copy package files
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json ./
 
-# Install dependencies
-RUN pnpm install
+# Install dependencies without frozen lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Copy source files
 COPY . .
