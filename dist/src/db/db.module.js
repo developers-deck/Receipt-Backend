@@ -14,13 +14,7 @@ const postgres = require('postgres');
 const dbProvider = {
     provide: db_provider_1.DB_PROVIDER,
     useFactory: async () => {
-        const client = postgres(process.env.DATABASE_URL || {
-            host: '130.61.179.9',
-            port: 5488,
-            database: 'postgres',
-            username: 'postgres',
-            password: 'icui4cu'
-        });
+        const client = postgres(process.env.DATABASE_URL);
         return (0, postgres_js_1.drizzle)(client);
     },
 };
