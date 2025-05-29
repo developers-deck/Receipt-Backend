@@ -21,16 +21,24 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
       if (this.browser) {
         console.log('Closing existing Playwright browser instance.');
         await this.browser.close();
-        this.browser = null; // Ensure it's nullified before attempting to re-launch
+        this.browser = null;
         this.page = null;
       }
       
       console.log('Attempting to launch Playwright browser...');
       this.browser = await chromium.launch({
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'], // Added --disable-gpu
-        executablePath: process.env.CHROME_BIN || undefined,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-software-rasterizer',
+          '--disable-extensions',
+          '--single-process',
+          '--no-zygote'
+        ],
         headless: true,
-        timeout: 60000 // Added a timeout for launch
+        timeout: 60000
       });
       console.log('Playwright browser launched. Creating new page...');
       
@@ -38,7 +46,6 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
       console.log('Playwright browser and page initialized successfully.');
     } catch (error) {
       console.error('Failed to initialize Playwright:', error);
-      // Clean up potentially partially initialized resources
       if (this.page) {
         try {
           await this.page.close();
@@ -55,8 +62,7 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         }
         this.browser = null;
       }
-      // Re-throw the error to ensure NestJS knows initialization failed
-      throw error; 
+      throw error;
     }
   }
 

@@ -38,8 +38,16 @@ let ReceiptsService = class ReceiptsService {
             }
             console.log('Attempting to launch Playwright browser...');
             this.browser = await playwright_1.chromium.launch({
-                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
-                executablePath: process.env.CHROME_BIN || undefined,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--disable-software-rasterizer',
+                    '--disable-extensions',
+                    '--single-process',
+                    '--no-zygote'
+                ],
                 headless: true,
                 timeout: 60000
             });

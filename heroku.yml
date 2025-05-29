@@ -1,0 +1,4 @@
+build:
+  buildpacks:
+    - url: heroku/nodejs
+    - url: https://github.com/CoffeeAndCode/playwright-buildpack 
