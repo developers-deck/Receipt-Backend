@@ -1,94 +1,75 @@
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
 
-# Install pnpm and required dependencies for Playwright
-RUN apk add --no-cache \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
     chromium \
-    nss \
-    freetype \
-    freetype-dev \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    # Additional dependencies for Playwright
-    libstdc++ \
-    libc6-compat \
-    libgcc \
-    libstdc++ \
-    linux-headers \
-    bash \
-    curl \
-    # Required for Playwright
-    xvfb \
-    # Required for Chrome
-    dbus \
-    # Required for fonts
-    fontconfig \
-    # Required for Playwright
-    python3 \
-    make \
-    g++ \
-    # Additional Chromium dependencies
-    atk \
-    cups \
-    dbus \
-    gtk+3.0 \
-    libdrm \
-    libxcomposite \
-    libxdamage \
-    libxrandr \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libatspi2.0-0 \
+    libcairo2 \
+    libdbus-1-3 \
+    libexpat1 \
+    libfontconfig1 \
+    libfreetype6 \
+    libgdk-pixbuf2.0-0 \
+    libglib2.0-0 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcb-dri3-0 \
+    libxcb-render0 \
+    libxcb-shape0 \
+    libxcb-xfixes0 \
+    libxcb-xinerama0 \
+    libxcb-xkb1 \
+    libxext6 \
+    libxfixes3 \
+    libxi6 \
+    libxrender1 \
+    libxss1 \
+    libxtst6 \
+    fonts-liberation \
+    libappindicator3-1 \
     xdg-utils \
-    alsa-lib \
-    libxss \
-    libxtst \
-    liberation-fonts \
-    libappindicator \
-    mesa-gbm \
-    # Additional system libraries
-    at-spi2-atk \
-    at-spi2-core \
-    cairo \
-    cups-libs \
-    dbus-libs \
-    expat \
-    fontconfig \
-    freetype \
-    gdk-pixbuf \
-    glib \
-    gtk+3.0 \
-    libX11 \
-    libXcomposite \
-    libXcursor \
-    libXdamage \
-    libXext \
-    libXfixes \
-    libXi \
-    libXrandr \
-    libXrender \
-    libXss \
-    libXtst \
-    libxcb \
-    libxkbcommon \
-    libxshmfence \
-    mesa-dri-gallium \
-    mesa-va-gallium \
-    mesa-vdpau-gallium \
-    pango \
-    pixman \
-    wayland \
-    xorg-server \
-    # Additional required dependencies from error message
-    atk-bridge \
-    libatk-bridge \
-    libxkbcommon \
-    at-spi2-atk \
-    libxcomposite \
-    libxdamage \
-    libxfixes \
-    libxrandr \
-    mesa-gbm \
-    alsa-lib
+    wget \
+    ca-certificates \
+    fonts-liberation \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libatspi2.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libdrm2 \
+    libgbm1 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libxshmfence1 \
+    xdg-utils \
+    libu2f-udev \
+    libvulkan1 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install pnpm
 RUN npm install -g pnpm@10.11.0
@@ -108,15 +89,15 @@ RUN pnpm run build
 # Set environment variables for Playwright
 ENV PLAYWRIGHT_BROWSERS_PATH=/app/pw-browsers
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-ENV CHROME_BIN=/usr/bin/chromium-browser
-ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV CHROME_BIN=/usr/bin/chromium
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PLAYWRIGHT_SKIP_VALIDATION=1
 
 # Create directory for Playwright browsers
 RUN mkdir -p /app/pw-browsers
 
 # Create a symbolic link to the system Chromium
-RUN ln -s /usr/bin/chromium-browser /app/pw-browsers/chromium
+RUN ln -s /usr/bin/chromium /app/pw-browsers/chromium
 
 # Start
 CMD ["node", "dist/src/main.js"]
