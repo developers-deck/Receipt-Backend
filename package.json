@@ -22,7 +22,7 @@
     "migrate": "pnpm exec drizzle-kit push:pg",
     "generate": "pnpm exec drizzle-kit generate:pg",
     "studio": "pnpm exec drizzle-kit studio",
-    "postinstall": "playwright install --with-deps chromium"
+    "postinstall": "playwright install chromium"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
