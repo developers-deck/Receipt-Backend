@@ -80,6 +80,9 @@ COPY package.json ./
 # Install dependencies without frozen lockfile
 RUN pnpm install --no-frozen-lockfile
 
+# Install Playwright system dependencies
+RUN pnpm exec playwright install-deps
+
 # Copy source files
 COPY . .
 
