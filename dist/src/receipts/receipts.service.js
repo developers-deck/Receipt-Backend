@@ -46,13 +46,18 @@ let ReceiptsService = class ReceiptsService {
                     '--disable-software-rasterizer',
                     '--disable-extensions',
                     '--single-process',
-                    '--no-zygote'
+                    '--no-zygote',
+                    '--disable-web-security',
+                    '--disable-features=IsolateOrigins,site-per-process'
                 ],
                 headless: true,
-                timeout: 60000
+                timeout: 60000,
+                ignoreDefaultArgs: ['--disable-extensions'],
+                chromiumSandbox: false
             });
             console.log('Playwright browser launched. Creating new page...');
             this.page = await this.browser.newPage();
+            await this.page.setViewportSize({ width: 1280, height: 800 });
             console.log('Playwright browser and page initialized successfully.');
         }
         catch (error) {
