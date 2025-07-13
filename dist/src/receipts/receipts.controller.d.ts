@@ -59,8 +59,6 @@ export declare class ReceiptsController {
         totalInclTax?: string | null | undefined;
         verificationCodeUrl?: string | null | undefined;
         createdAt?: Date | null | undefined;
-    } | {
-        error: string;
     }>;
     getReceiptById(id: string): Promise<{
         items: {
@@ -94,7 +92,7 @@ export declare class ReceiptsController {
         verificationCode: string;
         verificationCodeUrl: string | null;
         createdAt: Date | null;
-    } | null>;
+    }>;
     getReceiptsByCompanyName(companyName: string): Promise<{
         items: {
             id: number;

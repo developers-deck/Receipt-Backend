@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ReceiptsModule } from './receipts/receipts.module';
 import { ConfigModule } from '@nestjs/config';
-import { dbProvider } from './db/db.provider';
+import { DbModule } from './db/db.module';
 
 @Module({
   imports: [
@@ -11,8 +11,9 @@ import { dbProvider } from './db/db.provider';
       isGlobal: true,
     }),
     ReceiptsModule,
+    DbModule,
   ],
   controllers: [AppController],
-  providers: [AppService, dbProvider],
+  providers: [AppService],
 })
 export class AppModule {}

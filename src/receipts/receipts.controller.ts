@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Param } from '@nestjs/common';
+import { Controller, Get, Query, Param, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ReceiptsService } from './receipts.service';
 
 @Controller('receipts')
@@ -16,18 +16,22 @@ export class ReceiptsController {
     @Query('time') receiptTime: string,
   ) {
     if (!receiptTime) {
-      return { error: 'Receipt time is required.' };
+      throw new BadRequestException('Receipt time is required.');
     }
     const receipt = await this.receiptsService.getReceipt(verificationCode, receiptTime);
     if (!receipt) {
-      return { error: 'Failed to get receipt data.' };
+      throw new NotFoundException('Failed to get receipt data.');
     }
     return receipt;
   }
 
-  @Get(':id')
+  @Get('id/:id')
   async getReceiptById(@Param('id') id: string) {
-    return await this.receiptsService.getReceiptById(+id);
+    const receipt = await this.receiptsService.getReceiptById(+id);
+    if (!receipt) {
+      throw new NotFoundException(`Receipt with ID ${id} not found`);
+    }
+    return receipt;
   }
 
   @Get('by-company/:companyName')

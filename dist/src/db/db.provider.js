@@ -15,7 +15,7 @@ const schema = require("./schema");
 exports.DB_PROVIDER = 'DB_PROVIDER';
 exports.dbProvider = {
     provide: exports.DB_PROVIDER,
-    useFactory: (configService) => {
+    useFactory: async (configService) => {
         const dbHost = configService.get('DB_HOST');
         const dbPort = configService.get('DB_PORT');
         const dbUser = configService.get('DB_USER');
@@ -24,19 +24,23 @@ exports.dbProvider = {
         if (!dbHost || !dbPort || !dbUser || !dbPassword || !dbName) {
             throw new Error('Database environment variables (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME) are not set');
         }
-        console.log('DB_HOST:', dbHost);
-        console.log('DB_PORT:', dbPort);
-        console.log('DB_USER:', dbUser);
-        console.log('DB_NAME:', dbName);
         console.log('Creating new Pool...');
         const pool = new pg_1.Pool({
             host: dbHost,
-            port: parseInt(dbPort, 10),
+            port: dbPort,
             user: dbUser,
             password: dbPassword,
             database: dbName,
         });
         console.log('Pool created.');
+        try {
+            await pool.query('SELECT NOW()');
+            console.log('Database connection successful.');
+        }
+        catch (error) {
+            console.error('Failed to connect to the database:', error);
+            throw error;
+        }
         console.log('Initializing drizzle...');
         const db = (0, node_postgres_1.drizzle)(pool, { schema });
         console.log('Drizzle initialized.');

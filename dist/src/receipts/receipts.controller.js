@@ -25,16 +25,20 @@ let ReceiptsController = class ReceiptsController {
     }
     async getReceipt(verificationCode, receiptTime) {
         if (!receiptTime) {
-            return { error: 'Receipt time is required.' };
+            throw new common_1.BadRequestException('Receipt time is required.');
         }
         const receipt = await this.receiptsService.getReceipt(verificationCode, receiptTime);
         if (!receipt) {
-            return { error: 'Failed to get receipt data.' };
+            throw new common_1.NotFoundException('Failed to get receipt data.');
         }
         return receipt;
     }
     async getReceiptById(id) {
-        return await this.receiptsService.getReceiptById(+id);
+        const receipt = await this.receiptsService.getReceiptById(+id);
+        if (!receipt) {
+            throw new common_1.NotFoundException(`Receipt with ID ${id} not found`);
+        }
+        return receipt;
     }
     async getReceiptsByCompanyName(companyName) {
         return await this.receiptsService.getReceiptsByCompanyName(companyName);
@@ -56,7 +60,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ReceiptsController.prototype, "getReceipt", null);
 __decorate([
-    (0, common_1.Get)(':id'),
+    (0, common_1.Get)('id/:id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

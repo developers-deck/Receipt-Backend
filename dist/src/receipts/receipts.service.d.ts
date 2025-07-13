@@ -1,11 +1,13 @@
 import { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { NewReceipt } from '../db/schema';
 import { DbType } from '../db';
+import { ConfigService } from '@nestjs/config';
 export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     private db;
+    private configService;
     private browser;
     private page;
-    constructor(db: DbType);
+    constructor(db: DbType, configService: ConfigService);
     onModuleInit(): Promise<void>;
     private initializeBrowser;
     onModuleDestroy(): Promise<void>;
@@ -42,7 +44,7 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         verificationCodeUrl: string | null;
         createdAt: Date | null;
     }[]>;
-    getReceipt(verificationCode: string, receiptTime: string): Promise<NewReceipt | null>;
+    getReceipt(verificationCode: string, receiptTime: string): Promise<NewReceipt>;
     getReceiptById(id: number): Promise<{
         items: {
             id: number;

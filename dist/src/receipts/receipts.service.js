@@ -18,12 +18,15 @@ const playwright_1 = require("playwright");
 const db_provider_1 = require("../db/db.provider");
 const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
+const config_1 = require("@nestjs/config");
 let ReceiptsService = class ReceiptsService {
     db;
+    configService;
     browser = null;
     page = null;
-    constructor(db) {
+    constructor(db, configService) {
         this.db = db;
+        this.configService = configService;
     }
     async onModuleInit() {
         await this.initializeBrowser();
@@ -105,178 +108,99 @@ let ReceiptsService = class ReceiptsService {
             await this.initializeBrowser();
             if (!this.page) {
                 console.error('Failed to initialize Playwright page after retry.');
-                return null;
+                throw new common_1.ServiceUnavailableException('Failed to initialize browser service.');
             }
         }
         const page = this.page;
         try {
-            await page.goto(`https://verify.tra.go.tz/${verificationCode}`, { timeout: 60000, waitUntil: 'domcontentloaded' });
-            console.log(`Navigated to https://verify.tra.go.tz/${verificationCode}`);
-            console.log('Page title:', await page.title());
+            const traVerifyUrl = this.configService.get('TRA_VERIFY_URL');
+            await page.goto(`${traVerifyUrl}/${verificationCode}`, { timeout: 60000, waitUntil: 'domcontentloaded' });
             const hourSelect = await page.$('#HH');
-            const minuteSelect = await page.$('#MM');
-            const secondSelect = await page.$('#SS');
-            if (!hourSelect || !minuteSelect || !secondSelect) {
-                console.error('Verification code not found or invalid, or time inputs not found.');
-                return null;
+            if (hourSelect) {
+                const [hour, minute, second] = receiptTime.split(':');
+                await hourSelect.selectOption(hour);
+                await page.selectOption('#MM', minute);
+                await page.selectOption('#SS', second);
+                await page.click('button[type="submit"]');
+                await page.waitForNavigation({ timeout: 60000, waitUntil: 'domcontentloaded' });
             }
-            const [hour, minute, second] = receiptTime.split(':');
-            await hourSelect.selectOption(hour);
-            await minuteSelect.selectOption(minute);
-            await secondSelect.selectOption(second);
-            console.log(`Selected time: ${hour}:${minute}:${second}`);
-            await page.click('button[onclick="validateSecret()"]');
-            await page.waitForSelector('div.invoice-header center h4 b', { timeout: 30000 });
-            console.log('Clicked submit button and waiting for navigation.');
-            console.log('Current URL after navigation:', page.url());
-            const pageContent = await page.content();
-            console.log('Page Content after navigation:', pageContent);
-            const companyName = await page.$eval('div.invoice-header center h4 b', el => el.textContent?.trim());
-            console.log('Extracted companyName:', companyName);
-            const poBox = await page.$eval('div.invoice-info b', el => el.textContent?.trim());
-            console.log('Extracted poBox:', poBox);
-            const invoiceInfoElements = await page.$$('div.invoice-info b');
-            const invoiceInfoTexts = await Promise.all(invoiceInfoElements.slice(1).map(async (el) => {
-                const nextSiblingText = await page.evaluate(element => element.nextSibling?.textContent?.trim(), el);
-                return nextSiblingText;
-            }));
-            console.log('Raw invoiceInfoTexts:', invoiceInfoTexts);
-            const mobile = invoiceInfoTexts[0];
-            const tin = invoiceInfoTexts[1];
-            const vrn = invoiceInfoTexts[2];
-            const serialNo = invoiceInfoTexts[3];
-            const uin = invoiceInfoTexts[4];
-            const taxOffice = invoiceInfoTexts[5];
-            async function extractSiblingText(page, label) {
-                return await page.evaluate(labelText => {
-                    const bTags = Array.from(document.querySelectorAll('div.invoice-header b'));
-                    const target = bTags.find(b => b.textContent && b.textContent.trim().toUpperCase() === labelText);
-                    return target && target.nextSibling && target.nextSibling.textContent ? target.nextSibling.textContent.trim() : null;
-                }, label);
+            const companyName = await page.$eval('.receipt-container .card-header h3', el => el.textContent?.trim()).catch(() => null);
+            if (!companyName) {
+                throw new common_1.ServiceUnavailableException('Failed to extract receipt data. The page structure may have changed or the verification code is invalid.');
             }
-            const customerName = await extractSiblingText(page, 'CUSTOMER NAME:');
-            console.log('Extracted customerName:', customerName);
-            const customerIdType = await extractSiblingText(page, 'CUSTOMER ID TYPE:');
-            console.log('Extracted customerIdType:', customerIdType);
-            const customerId = await extractSiblingText(page, 'CUSTOMER ID:');
-            console.log('Extracted customerId:', customerId);
-            const customerMobile = await extractSiblingText(page, 'CUSTOMER MOBILE:');
-            console.log('Extracted customerMobile:', customerMobile);
-            const receiptNo = await extractSiblingText(page, 'RECEIPT NO:');
-            console.log('Extracted receiptNo:', receiptNo);
-            const zNumber = await extractSiblingText(page, 'Z NUMBER:');
-            console.log('Extracted zNumber:', zNumber);
-            const receiptDate = await extractSiblingText(page, 'RECEIPT DATE:');
-            console.log('Extracted receiptDate:', receiptDate);
-            const extractedReceiptTime = await extractSiblingText(page, 'RECEIPT TIME:');
-            console.log('Extracted extractedReceiptTime:', extractedReceiptTime);
-            const items = await page.$$eval('table.table-striped tbody tr', rows => {
-                return rows.map(row => {
-                    const cols = row.querySelectorAll('td');
-                    return {
-                        description: (cols[0]?.textContent || '').trim(),
-                        qty: (cols[1]?.textContent || '').trim(),
-                        amount: (cols[2]?.textContent || '').trim(),
-                    };
-                });
-            });
-            const totalAmounts = await page.$$eval('table.table tbody tr', rows => {
-                console.log('Raw totalAmounts rows:', rows.map(row => row.textContent?.trim()));
-                return rows.map(row => {
-                    const cols = row.querySelectorAll('td');
-                    const label = (row.querySelector('th')?.textContent || '').trim();
-                    const amount = (cols[0]?.textContent || '').trim();
-                    if (label === '') {
-                        const totalRow = rows.find(r => r.querySelector('th')?.textContent?.trim() === 'Total Amount');
-                        if (totalRow) {
-                            const totalCols = totalRow.querySelectorAll('td');
-                            return {
-                                label: 'SUMMARIZED SALE - E',
-                                amount: (totalCols[0]?.textContent || '').trim()
-                            };
-                        }
+            const poBox = await page.$eval('.receipt-container .card-header p:nth-of-type(1)', el => el.textContent?.trim());
+            const mobile = await page.$eval('.receipt-container .card-header p:nth-of-type(2)', el => el.textContent?.trim());
+            const details = await page.$$eval('.receipt-container .card-body .row .col-md-6', (cols) => {
+                const data = {};
+                cols.forEach(col => {
+                    const label = col.querySelector('p strong')?.textContent?.trim();
+                    const value = col.querySelector('p:nth-of-type(2)')?.textContent?.trim();
+                    if (label && value) {
+                        data[label] = value;
                     }
-                    return {
-                        label,
-                        amount,
-                    };
                 });
+                return data;
             });
-            console.log('Extracted totalAmounts:', totalAmounts);
-            const receiptData = JSON.stringify({
-                companyName,
-                poBox,
-                mobile,
-                tin,
-                vrn,
-                serialNo,
-                uin,
-                taxOffice,
-                customerName,
-                customerIdType,
-                customerId,
-                customerMobile,
-                receiptNo,
-                zNumber,
-                receiptDate,
-                receiptTime: extractedReceiptTime,
-                items,
-                totalAmounts,
-            }, null, 2);
-            console.log('Extracted Receipt Data:', receiptData);
+            const items = await page.$$eval('table.table-condensed tbody tr', rows => rows.map(row => {
+                const cols = row.querySelectorAll('td');
+                return {
+                    description: (cols[0]?.textContent || '').trim(),
+                    qty: (cols[1]?.textContent || '').trim(),
+                    amount: (cols[2]?.textContent || '').trim(),
+                };
+            }));
+            const totalAmounts = await page.$$eval('table.table.mt-5 tbody tr', rows => rows.map(row => {
+                const label = (row.querySelector('td:first-child')?.textContent || '').trim();
+                const amount = (row.querySelector('td:last-child')?.textContent || '').trim();
+                return { label, amount };
+            }));
+            const receiptDateTime = details['Date & Time:'] || '';
+            const [receiptDate, extractedReceiptTime] = receiptDateTime.split(' ');
             const newReceipt = {
                 verificationCode,
                 receiptTime,
                 companyName,
                 poBox,
                 mobile,
-                tin,
-                vrn,
-                serialNo,
-                uin,
-                taxOffice,
-                customerName,
-                customerIdType,
-                customerId,
-                customerMobile,
-                receiptNo,
-                zNumber,
+                tin: details['TIN:'] || '',
+                vrn: details['VRN:'] || '',
+                serialNo: details['Serial No:'] || '',
+                uin: details['UIN:'] || '',
+                taxOffice: details['Tax Office:'] || '',
+                customerName: details['Customer Name:'] || '',
+                customerIdType: details['Customer ID Type:'] || '',
+                customerId: details['Customer ID:'] || '',
+                customerMobile: details['Customer Mobile:'] || '',
+                receiptNo: details['Receipt No:'] || '',
+                zNumber: details['Z-Number:'] || '',
                 receiptDate,
                 totalExclTax: totalAmounts.find(t => t.label === 'TOTAL EXCL OF TAX:')?.amount || '0',
                 totalTax: totalAmounts.find(t => t.label === 'TOTAL TAX:')?.amount || '0',
                 totalInclTax: totalAmounts.find(t => t.label === 'TOTAL INCL OF TAX:')?.amount || '0',
-                verificationCodeUrl: `https://verify.tra.go.tz/${verificationCode}`
+                verificationCodeUrl: `${this.configService.get('TRA_VERIFY_URL')}/${verificationCode}`,
             };
-            try {
-                const result = await this.db.insert(schema_1.receipts).values(newReceipt).returning();
-                console.log('Database insertion result:', result);
-                if (result && result[0]) {
-                    const insertedReceipt = result[0];
-                    if (items && items.length > 0) {
-                        const purchasedItemsToInsert = items.map(item => ({
-                            receiptId: insertedReceipt.id,
-                            description: item.description,
-                            quantity: item.qty,
-                            amount: item.amount,
-                        }));
-                        await this.db.insert(schema_1.purchasedItems).values(purchasedItemsToInsert);
-                        console.log(`Inserted ${items.length} purchased items.`);
-                    }
-                    return insertedReceipt;
-                }
-                else {
-                    console.error('Database insertion did not return a result.');
-                    return null;
-                }
+            const result = await this.db.insert(schema_1.receipts).values(newReceipt).returning();
+            const insertedReceipt = result[0];
+            if (!insertedReceipt) {
+                throw new common_1.InternalServerErrorException('Failed to save receipt to the database.');
             }
-            catch (dbError) {
-                console.error('Database insertion error:', dbError);
-                return null;
+            if (items && items.length > 0) {
+                const purchasedItemsToInsert = items.map(item => ({
+                    receiptId: insertedReceipt.id,
+                    description: item.description,
+                    quantity: item.qty,
+                    amount: item.amount,
+                }));
+                await this.db.insert(schema_1.purchasedItems).values(purchasedItemsToInsert);
             }
+            return insertedReceipt;
         }
         catch (error) {
-            console.error('Error during scraping:', error);
-            return null;
+            console.error(`Error during scraping for ${verificationCode}:`, error);
+            if (error instanceof common_1.ServiceUnavailableException || error instanceof common_1.InternalServerErrorException) {
+                throw error;
+            }
+            throw new common_1.ServiceUnavailableException('An unexpected error occurred while scraping the receipt data.');
         }
     }
     async getReceiptById(id) {
@@ -306,6 +230,6 @@ exports.ReceiptsService = ReceiptsService;
 exports.ReceiptsService = ReceiptsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)(db_provider_1.DB_PROVIDER)),
-    __metadata("design:paramtypes", [Object])
+    __metadata("design:paramtypes", [Object, config_1.ConfigService])
 ], ReceiptsService);
 //# sourceMappingURL=receipts.service.js.map
