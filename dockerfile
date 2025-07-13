@@ -1,87 +1,58 @@
-FROM node:20-slim
+# Stage 1: Builder
+# This stage installs all dependencies, including devDependencies,
+# and builds the TypeScript source code into JavaScript.
+FROM node:20-slim AS builder
 
 WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    chromium \
-    libatk1.0-0t64 \
-    libatk-bridge2.0-0t64 \
-    libxkbcommon0 \
-    libatspi2.0-0t64 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libasound2t64 \
-    libcups2 \
-    libdrm2 \
-    libcairo2 \
-    libdbus-1-3 \
-    libexpat1 \
-    libfontconfig1 \
-    libfreetype6 \
-    libgdk-pixbuf2.0-0 \
-    libglib2.0-0 \
-    libgtk-3-0 \
-    libnspr4 \
-    libnss3 \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libx11-6 \
-    libx11-xcb1 \
-    libxcb1 \
-    libxcb-dri3-0 \
-    libxcb-render0 \
-    libxcb-shape0 \
-    libxcb-xfixes0 \
-    libxcb-xinerama0 \
-    libxcb-xkb1 \
-    libxext6 \
-    libxi6 \
-    libxrender1 \
-    libxss1 \
-    libxtst6 \
-    fonts-liberation \
-    libappindicator3-1 \
-    xdg-utils \
-    wget \
-    ca-certificates \
-    libu2f-udev \
-    libvulkan1 \
-    && rm -rf /var/lib/apt/lists/*
 
 # Install pnpm
 RUN npm install -g pnpm@10.11.0
 
-# Copy package files
-COPY package.json ./
+# Copy package manager files
+# The '*' handles cases where the lockfile might not exist initially.
+COPY package.json pnpm-lock.yaml* ./
 
-# Install dependencies without frozen lockfile
-RUN pnpm install --no-frozen-lockfile
+# Install all dependencies
+# Using --frozen-lockfile is best practice for CI/build environments
+# to ensure reproducible builds.
+RUN pnpm install --frozen-lockfile
 
-# Install Playwright system dependencies
-RUN pnpm exec playwright install-deps
-
-# Copy source files
+# Copy the rest of the source code
 COPY . .
 
-# Build
+# Build the application
 RUN pnpm run build
 
-# Set environment variables for Playwright
-ENV PLAYWRIGHT_BROWSERS_PATH=/app/pw-browsers
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-ENV CHROME_BIN=/usr/bin/chromium
-ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium
-ENV PLAYWRIGHT_SKIP_VALIDATION=1
+# Stage 2: Production
+# This stage creates the final, optimized image. It uses the official
+# Playwright image to ensure all browser dependencies are handled correctly.
+FROM mcr.microsoft.com/playwright:v1.44.0-jammy
 
-# Create directory for Playwright browsers
-RUN mkdir -p /app/pw-browsers
+WORKDIR /app
 
-# Create a symbolic link to the system Chromium
-RUN ln -s /usr/bin/chromium /app/pw-browsers/chromium
+# The Playwright base image already has Node.js and npm/npx.
+# We need to install the correct version of pnpm.
+RUN npm install -g pnpm@10.11.0
 
-# Start
-CMD ["node", "dist/src/main.js"]
+# Copy dependency files from the builder stage
+COPY --from=builder /app/package.json /app/pnpm-lock.yaml* ./
+
+# Install only production dependencies. This creates a smaller image.
+RUN pnpm install --prod --frozen-lockfile
+
+# Copy the built application from the builder stage
+COPY --from=builder /app/dist ./dist
+
+# The Playwright image comes with browsers pre-installed, so we don't
+# need to set ENV vars like PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD.
+# The image is also configured to find the browsers automatically.
+
+# Expose the application port
+EXPOSE 3000
+
+# The Playwright base image runs as a non-root user 'pwuser' for better security.
+# We switch to this user.
+USER pwuser
+
+# Start the application
+CMD ["node", "dist/main.js"]
