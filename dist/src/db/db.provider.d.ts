@@ -1,10 +1,9 @@
 import { ConfigService } from '@nestjs/config';
-import * as schema from './schema';
 export declare const DB_PROVIDER = "DB_PROVIDER";
 export declare const dbProvider: {
     provide: string;
-    useFactory: (configService: ConfigService) => Promise<import("drizzle-orm/node-postgres").NodePgDatabase<typeof schema>>;
-    inject: (typeof ConfigService)[];
+    useFactory: (configService: ConfigService) => unknown;
+    inject: {};
 };
 export declare class DbService {
 }

@@ -1,9 +1,2 @@
-declare const _default: {
-    schema: string;
-    out: string;
-    driver: "pg";
-    dbCredentials: {
-        connectionString: string;
-    };
-};
+declare const _default: Config;
 export default _default;
