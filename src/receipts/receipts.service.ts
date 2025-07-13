@@ -193,11 +193,15 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async getReceiptById(id: string) {
-    const receipt = await this.db.select().from(receipts).where(eq(receipts.id, id)).limit(1);
+    const receiptId = parseInt(id, 10);
+    if (isNaN(receiptId)) {
+      return null;
+    }
+    const receipt = await this.db.select().from(receipts).where(eq(receipts.id, receiptId)).limit(1);
     if (!receipt || receipt.length === 0) {
       return null;
     }
-    const purchasedItemsForReceipt = await this.db.select().from(purchasedItems).where(eq(purchasedItems.receiptId, id));
+    const purchasedItemsForReceipt = await this.db.select().from(purchasedItems).where(eq(purchasedItems.receiptId, receiptId));
     return { ...receipt[0], items: purchasedItemsForReceipt };
   }
 

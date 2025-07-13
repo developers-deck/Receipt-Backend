@@ -18,7 +18,14 @@ const pool = new Pool({
 });
 const db = drizzle(pool, { schema: { receipts } });
 
-const fileUploadService = new FileUploadService({ get: (k: string) => process.env[k] });
+// Create a mock ConfigService for the worker
+class MockConfigService {
+  get(key: string): string | undefined {
+    return process.env[key];
+  }
+}
+
+const fileUploadService = new FileUploadService(new MockConfigService() as any);
 const pdfGenerator = new PdfGeneratorService();
 const pdfQueue = new PdfQueueService();
 

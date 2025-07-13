@@ -195,11 +195,15 @@ let ReceiptsService = class ReceiptsService {
         return { status: 'queued', receiptId: insertedReceipt.id };
     }
     async getReceiptById(id) {
-        const receipt = await this.db.select().from(schema_1.receipts).where((0, drizzle_orm_1.eq)(schema_1.receipts.id, id)).limit(1);
+        const receiptId = parseInt(id, 10);
+        if (isNaN(receiptId)) {
+            return null;
+        }
+        const receipt = await this.db.select().from(schema_1.receipts).where((0, drizzle_orm_1.eq)(schema_1.receipts.id, receiptId)).limit(1);
         if (!receipt || receipt.length === 0) {
             return null;
         }
-        const purchasedItemsForReceipt = await this.db.select().from(schema_1.purchasedItems).where((0, drizzle_orm_1.eq)(schema_1.purchasedItems.receiptId, id));
+        const purchasedItemsForReceipt = await this.db.select().from(schema_1.purchasedItems).where((0, drizzle_orm_1.eq)(schema_1.purchasedItems.receiptId, receiptId));
         return { ...receipt[0], items: purchasedItemsForReceipt };
     }
     async generateReceiptPdf(receiptData) {

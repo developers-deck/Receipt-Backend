@@ -22,7 +22,7 @@ export class PdfQueueService {
 
   async dequeueJob(): Promise<PdfJob | null> {
     const res = await this.redis.lpop(this.queueKey);
-    if (!res) return null;
+    if (!res || typeof res !== 'string') return null;
     try {
       return JSON.parse(res) as PdfJob;
     } catch (e) {
