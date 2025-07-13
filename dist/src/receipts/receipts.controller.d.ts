@@ -8,7 +8,7 @@ export declare class ReceiptsController {
         items: any;
         id: number;
         createdAt: Date | null;
-        userId: number;
+        userId: string;
         companyName: string | null;
         poBox: string | null;
         mobile: string | null;
@@ -37,7 +37,7 @@ export declare class ReceiptsController {
         items: any;
         id: number;
         createdAt: Date | null;
-        userId: number;
+        userId: string;
         companyName: string | null;
         poBox: string | null;
         mobile: string | null;
@@ -66,7 +66,7 @@ export declare class ReceiptsController {
         items: any;
         id: number;
         createdAt: Date | null;
-        userId: number;
+        userId: string;
         companyName: string | null;
         poBox: string | null;
         mobile: string | null;
@@ -102,7 +102,7 @@ export declare class ReceiptsController {
         }[];
         id: number;
         createdAt: Date | null;
-        userId: number;
+        userId: string;
         companyName: string | null;
         poBox: string | null;
         mobile: string | null;

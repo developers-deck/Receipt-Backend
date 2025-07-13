@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.purchasedItems = exports.receipts = exports.users = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 exports.users = (0, pg_core_1.pgTable)('users', {
-    id: (0, pg_core_1.serial)('id').primaryKey(),
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     username: (0, pg_core_1.varchar)('username', { length: 255 }).notNull().unique(),
     passwordHash: (0, pg_core_1.text)('password_hash').notNull(),
     role: (0, pg_core_1.varchar)('role', { enum: ['admin', 'user'] }).default('user').notNull(),
@@ -11,7 +11,7 @@ exports.users = (0, pg_core_1.pgTable)('users', {
 });
 exports.receipts = (0, pg_core_1.pgTable)('receipts', {
     id: (0, pg_core_1.serial)('id').primaryKey(),
-    userId: (0, pg_core_1.integer)('user_id').references(() => exports.users.id, { onDelete: 'cascade' }).notNull(),
+    userId: (0, pg_core_1.uuid)('user_id').references(() => exports.users.id, { onDelete: 'cascade' }).notNull(),
     companyName: (0, pg_core_1.text)('company_name'),
     poBox: (0, pg_core_1.text)('po_box'),
     mobile: (0, pg_core_1.text)('mobile'),

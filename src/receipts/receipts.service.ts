@@ -98,7 +98,7 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     await safeCloseBrowser(this.browser);
   }
 
-  async getReceiptsByUserId(userId: number) {
+  async getReceiptsByUserId(userId: string) {
     const userReceipts = await this.db.select().from(receipts).where(eq(receipts.userId, userId));
     if (!userReceipts || userReceipts.length === 0) {
       return [];
@@ -137,7 +137,7 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     }));
   }
 
-  async getReceipt(verificationCode: string, receiptTime: string, userId: number): Promise<any> {
+  async getReceipt(verificationCode: string, receiptTime: string, userId: string): Promise<any> {
     const traVerifyUrl = this.configService.get<string>('TRA_VERIFY_URL') || '';
     let scraped: ScrapedReceiptData;
     try {
@@ -192,7 +192,7 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     return { status: 'queued', receiptId: insertedReceipt.id };
   }
 
-  async getReceiptById(id: number) {
+  async getReceiptById(id: string) {
     const receipt = await this.db.select().from(receipts).where(eq(receipts.id, id)).limit(1);
     if (!receipt || receipt.length === 0) {
       return null;

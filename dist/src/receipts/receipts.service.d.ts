@@ -16,11 +16,11 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     onModuleInit(): Promise<void>;
     private initializeBrowser;
     onModuleDestroy(): Promise<void>;
-    getReceiptsByUserId(userId: number): Promise<{
+    getReceiptsByUserId(userId: string): Promise<{
         items: any;
         id: number;
         createdAt: Date | null;
-        userId: number;
+        userId: string;
         companyName: string | null;
         poBox: string | null;
         mobile: string | null;
@@ -49,7 +49,7 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         items: any;
         id: number;
         createdAt: Date | null;
-        userId: number;
+        userId: string;
         companyName: string | null;
         poBox: string | null;
         mobile: string | null;
@@ -74,8 +74,8 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         pdfUrl: string | null;
         pdfStatus: string | null;
     }[]>;
-    getReceipt(verificationCode: string, receiptTime: string, userId: number): Promise<any>;
-    getReceiptById(id: number): Promise<{
+    getReceipt(verificationCode: string, receiptTime: string, userId: string): Promise<any>;
+    getReceiptById(id: string): Promise<{
         items: {
             id: number;
             createdAt: Date | null;
@@ -86,7 +86,7 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         }[];
         id: number;
         createdAt: Date | null;
-        userId: number;
+        userId: string;
         companyName: string | null;
         poBox: string | null;
         mobile: string | null;
@@ -116,7 +116,7 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         items: any;
         id: number;
         createdAt: Date | null;
-        userId: number;
+        userId: string;
         companyName: string | null;
         poBox: string | null;
         mobile: string | null;

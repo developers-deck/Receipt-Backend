@@ -34,14 +34,14 @@ let ReceiptsController = class ReceiptsController {
         return this.receiptsService.getAllReceipts();
     }
     async getReceiptsForUser(userId) {
-        return this.receiptsService.getReceiptsByUserId(+userId);
+        return this.receiptsService.getReceiptsByUserId(userId);
     }
     async getMyReceipts(req) {
         const userId = req.user.userId;
         return this.receiptsService.getReceiptsByUserId(userId);
     }
     async getReceiptById(id, req) {
-        const receiptId = +id;
+        const receiptId = id;
         const requestingUser = req.user;
         const receipt = await this.receiptsService.getReceiptById(receiptId);
         if (!receipt) {

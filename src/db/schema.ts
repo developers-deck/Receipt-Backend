@@ -1,8 +1,8 @@
-import { pgTable, serial, text, timestamp, varchar, integer } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, varchar, integer, uuid } from 'drizzle-orm/pg-core';
 
 // Users Table: Stores user credentials and roles
 export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
+  id: uuid('id').primaryKey().defaultRandom(), // Use UUID for new users
   username: varchar('username', { length: 255 }).notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: varchar('role', { enum: ['admin', 'user'] }).default('user').notNull(),
@@ -12,7 +12,7 @@ export const users = pgTable('users', {
 // Receipts Table: Stores all scraped receipt data
 export const receipts = pgTable('receipts', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(), // Reference UUID
   companyName: text('company_name'),
   poBox: text('po_box'),
   mobile: text('mobile'),
@@ -55,4 +55,3 @@ export type NewUser = typeof users.$inferInsert;
 export type Receipt = typeof receipts.$inferSelect;
 export type NewReceipt = typeof receipts.$inferInsert;
 export type PurchasedItem = typeof purchasedItems.$inferSelect;
-export type NewPurchasedItem = typeof purchasedItems.$inferInsert;

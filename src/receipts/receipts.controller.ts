@@ -29,7 +29,7 @@ export class ReceiptsController {
   @Roles(Role.Admin)
   async getReceiptsForUser(@Param('userId') userId: string) {
     // This endpoint is for admins to get all receipts for a specific user.
-    return this.receiptsService.getReceiptsByUserId(+userId);
+    return this.receiptsService.getReceiptsByUserId(userId);
   }
 
   @Get('mine')
@@ -42,7 +42,7 @@ export class ReceiptsController {
   @Get(':id')
   @Roles(Role.Admin, Role.User)
   async getReceiptById(@Param('id') id: string, @Request() req) {
-    const receiptId = +id;
+    const receiptId = id;
     const requestingUser = req.user;
 
     const receipt = await this.receiptsService.getReceiptById(receiptId);

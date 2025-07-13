@@ -5,10 +5,10 @@ export declare const users: import("drizzle-orm/pg-core").PgTableWithColumns<{
         id: import("drizzle-orm/pg-core").PgColumn<{
             name: "id";
             tableName: "users";
-            dataType: "number";
-            columnType: "PgSerial";
-            data: number;
-            driverParam: number;
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
             notNull: true;
             hasDefault: true;
             enumValues: undefined;
@@ -43,7 +43,7 @@ export declare const users: import("drizzle-orm/pg-core").PgTableWithColumns<{
             tableName: "users";
             dataType: "string";
             columnType: "PgVarchar";
-            data: "admin" | "user";
+            data: "user" | "admin";
             driverParam: string;
             notNull: true;
             hasDefault: true;
@@ -84,10 +84,10 @@ export declare const receipts: import("drizzle-orm/pg-core").PgTableWithColumns<
         userId: import("drizzle-orm/pg-core").PgColumn<{
             name: "user_id";
             tableName: "receipts";
-            dataType: "number";
-            columnType: "PgInteger";
-            data: number;
-            driverParam: string | number;
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
             notNull: true;
             hasDefault: false;
             enumValues: undefined;
@@ -468,4 +468,3 @@ export type NewUser = typeof users.$inferInsert;
 export type Receipt = typeof receipts.$inferSelect;
 export type NewReceipt = typeof receipts.$inferInsert;
 export type PurchasedItem = typeof purchasedItems.$inferSelect;
-export type NewPurchasedItem = typeof purchasedItems.$inferInsert;
