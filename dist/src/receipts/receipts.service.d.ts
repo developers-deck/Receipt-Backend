@@ -1,16 +1,53 @@
 import { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { NewReceipt } from '../db/schema';
+import { Receipt } from '../db/schema';
 import { DbType } from '../db';
 import { ConfigService } from '@nestjs/config';
+import { FileUploadService } from '../file-upload/file-upload.service';
 export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     private db;
     private configService;
+    private fileUploadService;
     private browser;
     private page;
-    constructor(db: DbType, configService: ConfigService);
+    constructor(db: DbType, configService: ConfigService, fileUploadService: FileUploadService);
     onModuleInit(): Promise<void>;
     private initializeBrowser;
     onModuleDestroy(): Promise<void>;
+    getReceiptsByUserId(userId: number): Promise<{
+        items: {
+            id: number;
+            createdAt: Date | null;
+            receiptId: number;
+            description: string | null;
+            quantity: string | null;
+            amount: string | null;
+        }[];
+        id: number;
+        createdAt: Date | null;
+        userId: number;
+        companyName: string | null;
+        poBox: string | null;
+        mobile: string | null;
+        tin: string | null;
+        vrn: string | null;
+        serialNo: string | null;
+        uin: string | null;
+        taxOffice: string | null;
+        customerName: string | null;
+        customerIdType: string | null;
+        customerId: string | null;
+        customerMobile: string | null;
+        receiptNo: string | null;
+        zNumber: string | null;
+        receiptDate: string | null;
+        receiptTime: string | null;
+        totalExclTax: string | null;
+        totalTax: string | null;
+        totalInclTax: string | null;
+        verificationCode: string;
+        verificationCodeUrl: string | null;
+        pdfUrl: string | null;
+    }[]>;
     getAllReceipts(): Promise<{
         items: {
             id: number;
@@ -21,6 +58,8 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
             amount: string | null;
         }[];
         id: number;
+        createdAt: Date | null;
+        userId: number;
         companyName: string | null;
         poBox: string | null;
         mobile: string | null;
@@ -42,9 +81,9 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         totalInclTax: string | null;
         verificationCode: string;
         verificationCodeUrl: string | null;
-        createdAt: Date | null;
+        pdfUrl: string | null;
     }[]>;
-    getReceipt(verificationCode: string, receiptTime: string): Promise<NewReceipt>;
+    getReceipt(verificationCode: string, receiptTime: string, userId: number): Promise<Receipt>;
     getReceiptById(id: number): Promise<{
         items: {
             id: number;
@@ -55,6 +94,8 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
             amount: string | null;
         }[];
         id: number;
+        createdAt: Date | null;
+        userId: number;
         companyName: string | null;
         poBox: string | null;
         mobile: string | null;
@@ -76,8 +117,9 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         totalInclTax: string | null;
         verificationCode: string;
         verificationCodeUrl: string | null;
-        createdAt: Date | null;
+        pdfUrl: string | null;
     } | null>;
+    private generateReceiptPdf;
     getReceiptsByCompanyName(companyName: string): Promise<{
         items: {
             id: number;
@@ -88,6 +130,8 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
             amount: string | null;
         }[];
         id: number;
+        createdAt: Date | null;
+        userId: number;
         companyName: string | null;
         poBox: string | null;
         mobile: string | null;
@@ -109,6 +153,6 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         totalInclTax: string | null;
         verificationCode: string;
         verificationCodeUrl: string | null;
-        createdAt: Date | null;
+        pdfUrl: string | null;
     }[]>;
 }

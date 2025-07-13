@@ -1,7 +1,35 @@
 import { ReceiptsService } from './receipts.service';
+import { GetReceiptDto } from './dto/get-receipt.dto';
 export declare class ReceiptsController {
     private readonly receiptsService;
     constructor(receiptsService: ReceiptsService);
+    createReceipt(getReceiptDto: GetReceiptDto, req: any): Promise<{
+        id: number;
+        createdAt: Date | null;
+        userId: number;
+        companyName: string | null;
+        poBox: string | null;
+        mobile: string | null;
+        tin: string | null;
+        vrn: string | null;
+        serialNo: string | null;
+        uin: string | null;
+        taxOffice: string | null;
+        customerName: string | null;
+        customerIdType: string | null;
+        customerId: string | null;
+        customerMobile: string | null;
+        receiptNo: string | null;
+        zNumber: string | null;
+        receiptDate: string | null;
+        receiptTime: string | null;
+        totalExclTax: string | null;
+        totalTax: string | null;
+        totalInclTax: string | null;
+        verificationCode: string;
+        verificationCodeUrl: string | null;
+        pdfUrl: string | null;
+    }>;
     getAllReceipts(): Promise<{
         items: {
             id: number;
@@ -12,6 +40,8 @@ export declare class ReceiptsController {
             amount: string | null;
         }[];
         id: number;
+        createdAt: Date | null;
+        userId: number;
         companyName: string | null;
         poBox: string | null;
         mobile: string | null;
@@ -33,34 +63,9 @@ export declare class ReceiptsController {
         totalInclTax: string | null;
         verificationCode: string;
         verificationCodeUrl: string | null;
-        createdAt: Date | null;
+        pdfUrl: string | null;
     }[]>;
-    getReceipt(verificationCode: string, receiptTime: string): Promise<{
-        verificationCode: string;
-        id?: number | undefined;
-        companyName?: string | null | undefined;
-        poBox?: string | null | undefined;
-        mobile?: string | null | undefined;
-        tin?: string | null | undefined;
-        vrn?: string | null | undefined;
-        serialNo?: string | null | undefined;
-        uin?: string | null | undefined;
-        taxOffice?: string | null | undefined;
-        customerName?: string | null | undefined;
-        customerIdType?: string | null | undefined;
-        customerId?: string | null | undefined;
-        customerMobile?: string | null | undefined;
-        receiptNo?: string | null | undefined;
-        zNumber?: string | null | undefined;
-        receiptDate?: string | null | undefined;
-        receiptTime?: string | null | undefined;
-        totalExclTax?: string | null | undefined;
-        totalTax?: string | null | undefined;
-        totalInclTax?: string | null | undefined;
-        verificationCodeUrl?: string | null | undefined;
-        createdAt?: Date | null | undefined;
-    }>;
-    getReceiptById(id: string): Promise<{
+    getReceiptsForUser(userId: string): Promise<{
         items: {
             id: number;
             createdAt: Date | null;
@@ -70,6 +75,8 @@ export declare class ReceiptsController {
             amount: string | null;
         }[];
         id: number;
+        createdAt: Date | null;
+        userId: number;
         companyName: string | null;
         poBox: string | null;
         mobile: string | null;
@@ -91,9 +98,9 @@ export declare class ReceiptsController {
         totalInclTax: string | null;
         verificationCode: string;
         verificationCodeUrl: string | null;
-        createdAt: Date | null;
-    }>;
-    getReceiptsByCompanyName(companyName: string): Promise<{
+        pdfUrl: string | null;
+    }[]>;
+    getMyReceipts(req: any): Promise<{
         items: {
             id: number;
             createdAt: Date | null;
@@ -103,6 +110,8 @@ export declare class ReceiptsController {
             amount: string | null;
         }[];
         id: number;
+        createdAt: Date | null;
+        userId: number;
         companyName: string | null;
         poBox: string | null;
         mobile: string | null;
@@ -124,6 +133,41 @@ export declare class ReceiptsController {
         totalInclTax: string | null;
         verificationCode: string;
         verificationCodeUrl: string | null;
-        createdAt: Date | null;
+        pdfUrl: string | null;
     }[]>;
+    getReceiptById(id: string, req: any): Promise<{
+        items: {
+            id: number;
+            createdAt: Date | null;
+            receiptId: number;
+            description: string | null;
+            quantity: string | null;
+            amount: string | null;
+        }[];
+        id: number;
+        createdAt: Date | null;
+        userId: number;
+        companyName: string | null;
+        poBox: string | null;
+        mobile: string | null;
+        tin: string | null;
+        vrn: string | null;
+        serialNo: string | null;
+        uin: string | null;
+        taxOffice: string | null;
+        customerName: string | null;
+        customerIdType: string | null;
+        customerId: string | null;
+        customerMobile: string | null;
+        receiptNo: string | null;
+        zNumber: string | null;
+        receiptDate: string | null;
+        receiptTime: string | null;
+        totalExclTax: string | null;
+        totalTax: string | null;
+        totalInclTax: string | null;
+        verificationCode: string;
+        verificationCodeUrl: string | null;
+        pdfUrl: string | null;
+    }>;
 }

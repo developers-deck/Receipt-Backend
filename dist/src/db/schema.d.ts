@@ -1,3 +1,70 @@
+export declare const users: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "users";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "users";
+            dataType: "number";
+            columnType: "PgSerial";
+            data: number;
+            driverParam: number;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        username: import("drizzle-orm/pg-core").PgColumn<{
+            name: "username";
+            tableName: "users";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        passwordHash: import("drizzle-orm/pg-core").PgColumn<{
+            name: "password_hash";
+            tableName: "users";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        role: import("drizzle-orm/pg-core").PgColumn<{
+            name: "role";
+            tableName: "users";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: "user" | "admin";
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            enumValues: ["admin", "user"];
+            baseColumn: never;
+        }, {}, {}>;
+        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
+            tableName: "users";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
 export declare const receipts: import("drizzle-orm/pg-core").PgTableWithColumns<{
     name: "receipts";
     schema: undefined;
@@ -11,6 +78,18 @@ export declare const receipts: import("drizzle-orm/pg-core").PgTableWithColumns<
             driverParam: number;
             notNull: true;
             hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        userId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "user_id";
+            tableName: "receipts";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: false;
             enumValues: undefined;
             baseColumn: never;
         }, {}, {}>;
@@ -266,6 +345,18 @@ export declare const receipts: import("drizzle-orm/pg-core").PgTableWithColumns<
             enumValues: [string, ...string[]];
             baseColumn: never;
         }, {}, {}>;
+        pdfUrl: import("drizzle-orm/pg-core").PgColumn<{
+            name: "pdf_url";
+            tableName: "receipts";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
         createdAt: import("drizzle-orm/pg-core").PgColumn<{
             name: "created_at";
             tableName: "receipts";
@@ -301,11 +392,11 @@ export declare const purchasedItems: import("drizzle-orm/pg-core").PgTableWithCo
             name: "receipt_id";
             tableName: "purchased_items";
             dataType: "number";
-            columnType: "PgSerial";
+            columnType: "PgInteger";
             data: number;
-            driverParam: number;
+            driverParam: string | number;
             notNull: true;
-            hasDefault: true;
+            hasDefault: false;
             enumValues: undefined;
             baseColumn: never;
         }, {}, {}>;
@@ -360,6 +451,8 @@ export declare const purchasedItems: import("drizzle-orm/pg-core").PgTableWithCo
     };
     dialect: "pg";
 }>;
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
 export type Receipt = typeof receipts.$inferSelect;
 export type NewReceipt = typeof receipts.$inferInsert;
 export type PurchasedItem = typeof purchasedItems.$inferSelect;

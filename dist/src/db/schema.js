@@ -1,9 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.purchasedItems = exports.receipts = void 0;
+exports.purchasedItems = exports.receipts = exports.users = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
+exports.users = (0, pg_core_1.pgTable)('users', {
+    id: (0, pg_core_1.serial)('id').primaryKey(),
+    username: (0, pg_core_1.varchar)('username', { length: 255 }).notNull().unique(),
+    passwordHash: (0, pg_core_1.text)('password_hash').notNull(),
+    role: (0, pg_core_1.varchar)('role', { enum: ['admin', 'user'] }).default('user').notNull(),
+    createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+});
 exports.receipts = (0, pg_core_1.pgTable)('receipts', {
     id: (0, pg_core_1.serial)('id').primaryKey(),
+    userId: (0, pg_core_1.integer)('user_id').references(() => exports.users.id, { onDelete: 'cascade' }).notNull(),
     companyName: (0, pg_core_1.text)('company_name'),
     poBox: (0, pg_core_1.text)('po_box'),
     mobile: (0, pg_core_1.text)('mobile'),
@@ -25,11 +33,12 @@ exports.receipts = (0, pg_core_1.pgTable)('receipts', {
     totalInclTax: (0, pg_core_1.text)('total_incl_tax'),
     verificationCode: (0, pg_core_1.text)('verification_code').notNull().unique(),
     verificationCodeUrl: (0, pg_core_1.text)('verification_code_url'),
+    pdfUrl: (0, pg_core_1.text)('pdf_url'),
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
 });
 exports.purchasedItems = (0, pg_core_1.pgTable)('purchased_items', {
     id: (0, pg_core_1.serial)('id').primaryKey(),
-    receiptId: (0, pg_core_1.serial)('receipt_id').references(() => exports.receipts.id),
+    receiptId: (0, pg_core_1.integer)('receipt_id').references(() => exports.receipts.id, { onDelete: 'cascade' }).notNull(),
     description: (0, pg_core_1.text)('description'),
     quantity: (0, pg_core_1.text)('quantity'),
     amount: (0, pg_core_1.text)('amount'),
