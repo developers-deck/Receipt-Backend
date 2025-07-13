@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Inject, InternalServerErrorException, ServiceUnavailableException } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Inject, InternalServerErrorException, ServiceUnavailableException, NotFoundException, GatewayTimeoutException } from '@nestjs/common';
 import { chromium, Browser, Page } from 'playwright';
 import { DB_PROVIDER } from '../db/db.provider';
 import { receipts, NewReceipt, purchasedItems } from '../db/schema';
@@ -110,27 +110,34 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
       const traVerifyUrl = this.configService.get<string>('TRA_VERIFY_URL');
       await page.goto(`${traVerifyUrl}/${verificationCode}`, { timeout: 60000, waitUntil: 'domcontentloaded' });
 
-      // Check if the page asks for time and submit
+      // Check if the page asks for time and submit if needed
       const hourSelect = await page.$('#HH');
       if (hourSelect) {
-        const [hour, minute, second] = receiptTime.split(':');
+        const [hour, minute] = receiptTime.split(':');
         await hourSelect.selectOption(hour);
         await page.selectOption('#MM', minute);
-        await page.selectOption('#SS', second);
-        await page.click('button[type="submit"]');
-        await page.waitForNavigation({ timeout: 60000, waitUntil: 'domcontentloaded' });
+        // Assuming seconds are not always required or available
+        if ((await page.$('#SS')) && receiptTime.split(':').length > 2) {
+            await page.selectOption('#SS', receiptTime.split(':')[2]);
+        }
+        const submitButtonSelector = 'button[type="submit"]';
+        await page.waitForSelector(submitButtonSelector, { state: 'visible', timeout: 60000 });
+        await page.click(submitButtonSelector, { timeout: 60000 });
+        await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 });
       }
 
-      // --- Start Data Extraction ---
-      const companyName = await page.$eval('.receipt-container .card-header h3', el => el.textContent?.trim()).catch(() => null);
-      if (!companyName) {
-        throw new ServiceUnavailableException('Failed to extract receipt data. The page structure may have changed or the verification code is invalid.');
+      // Verify that the receipt content is present before scraping
+      const receiptContainer = await page.$('.receipt-container');
+      if (!receiptContainer) {
+        throw new NotFoundException('A receipt with the provided details could not be found.');
       }
 
-      const poBox = await page.$eval('.receipt-container .card-header p:nth-of-type(1)', el => el.textContent?.trim());
-      const mobile = await page.$eval('.receipt-container .card-header p:nth-of-type(2)', el => el.textContent?.trim());
+      // Scrape receipt data
+      const companyName = await receiptContainer.$eval('.card-header h3', el => el.textContent?.trim());
+      const poBox = await receiptContainer.$eval('.card-header p:nth-of-type(1)', el => el.textContent?.trim());
+      const mobile = await receiptContainer.$eval('.card-header p:nth-of-type(2)', el => el.textContent?.trim());
 
-      const details = await page.$$eval('.receipt-container .card-body .row .col-md-6', (cols) => {
+      const details = await receiptContainer.$$eval('.card-body .row .col-md-6', (cols) => {
         const data = {};
         cols.forEach(col => {
           const label = col.querySelector('p strong')?.textContent?.trim();
@@ -142,7 +149,7 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         return data;
       });
 
-      const items = await page.$$eval('table.table-condensed tbody tr', rows =>
+      const items = await receiptContainer.$$eval('table.table-condensed tbody tr', rows =>
         rows.map(row => {
           const cols = row.querySelectorAll('td');
           return {
@@ -153,7 +160,7 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         }),
       );
 
-      const totalAmounts = await page.$$eval('table.table.mt-5 tbody tr', rows =>
+      const totalAmounts = await receiptContainer.$$eval('table.table.mt-5 tbody tr', rows =>
         rows.map(row => {
           const label = (row.querySelector('td:first-child')?.textContent || '').trim();
           const amount = (row.querySelector('td:last-child')?.textContent || '').trim();
@@ -162,7 +169,7 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
       );
 
       const receiptDateTime = details['Date & Time:'] || '';
-      const [receiptDate, extractedReceiptTime] = receiptDateTime.split(' ');
+      const [receiptDate] = receiptDateTime.split(' ');
 
       // Save to database
       const newReceipt: NewReceipt = {
@@ -210,10 +217,16 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
 
     } catch (error) {
       console.error(`Error during scraping for ${verificationCode}:`, error);
-      if (error instanceof ServiceUnavailableException || error instanceof InternalServerErrorException) {
+
+      if (error.name === 'TimeoutError') {
+        throw new GatewayTimeoutException('The verification took too long to respond. Please try again later.');
+      }
+
+      if (error instanceof NotFoundException || error instanceof InternalServerErrorException || error instanceof ServiceUnavailableException) {
         throw error;
       }
-      throw new ServiceUnavailableException('An unexpected error occurred while scraping the receipt data.');
+
+      throw new ServiceUnavailableException('An unexpected error occurred while getting the receipt data.');
     }
   }
 

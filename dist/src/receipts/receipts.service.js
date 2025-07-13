@@ -117,20 +117,25 @@ let ReceiptsService = class ReceiptsService {
             await page.goto(`${traVerifyUrl}/${verificationCode}`, { timeout: 60000, waitUntil: 'domcontentloaded' });
             const hourSelect = await page.$('#HH');
             if (hourSelect) {
-                const [hour, minute, second] = receiptTime.split(':');
+                const [hour, minute] = receiptTime.split(':');
                 await hourSelect.selectOption(hour);
                 await page.selectOption('#MM', minute);
-                await page.selectOption('#SS', second);
-                await page.click('button[type="submit"]');
-                await page.waitForNavigation({ timeout: 60000, waitUntil: 'domcontentloaded' });
+                if ((await page.$('#SS')) && receiptTime.split(':').length > 2) {
+                    await page.selectOption('#SS', receiptTime.split(':')[2]);
+                }
+                const submitButtonSelector = 'button[type="submit"]';
+                await page.waitForSelector(submitButtonSelector, { state: 'visible', timeout: 60000 });
+                await page.click(submitButtonSelector, { timeout: 60000 });
+                await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 });
             }
-            const companyName = await page.$eval('.receipt-container .card-header h3', el => el.textContent?.trim()).catch(() => null);
-            if (!companyName) {
-                throw new common_1.ServiceUnavailableException('Failed to extract receipt data. The page structure may have changed or the verification code is invalid.');
+            const receiptContainer = await page.$('.receipt-container');
+            if (!receiptContainer) {
+                throw new common_1.NotFoundException('A receipt with the provided details could not be found.');
             }
-            const poBox = await page.$eval('.receipt-container .card-header p:nth-of-type(1)', el => el.textContent?.trim());
-            const mobile = await page.$eval('.receipt-container .card-header p:nth-of-type(2)', el => el.textContent?.trim());
-            const details = await page.$$eval('.receipt-container .card-body .row .col-md-6', (cols) => {
+            const companyName = await receiptContainer.$eval('.card-header h3', el => el.textContent?.trim());
+            const poBox = await receiptContainer.$eval('.card-header p:nth-of-type(1)', el => el.textContent?.trim());
+            const mobile = await receiptContainer.$eval('.card-header p:nth-of-type(2)', el => el.textContent?.trim());
+            const details = await receiptContainer.$$eval('.card-body .row .col-md-6', (cols) => {
                 const data = {};
                 cols.forEach(col => {
                     const label = col.querySelector('p strong')?.textContent?.trim();
@@ -141,7 +146,7 @@ let ReceiptsService = class ReceiptsService {
                 });
                 return data;
             });
-            const items = await page.$$eval('table.table-condensed tbody tr', rows => rows.map(row => {
+            const items = await receiptContainer.$$eval('table.table-condensed tbody tr', rows => rows.map(row => {
                 const cols = row.querySelectorAll('td');
                 return {
                     description: (cols[0]?.textContent || '').trim(),
@@ -149,13 +154,13 @@ let ReceiptsService = class ReceiptsService {
                     amount: (cols[2]?.textContent || '').trim(),
                 };
             }));
-            const totalAmounts = await page.$$eval('table.table.mt-5 tbody tr', rows => rows.map(row => {
+            const totalAmounts = await receiptContainer.$$eval('table.table.mt-5 tbody tr', rows => rows.map(row => {
                 const label = (row.querySelector('td:first-child')?.textContent || '').trim();
                 const amount = (row.querySelector('td:last-child')?.textContent || '').trim();
                 return { label, amount };
             }));
             const receiptDateTime = details['Date & Time:'] || '';
-            const [receiptDate, extractedReceiptTime] = receiptDateTime.split(' ');
+            const [receiptDate] = receiptDateTime.split(' ');
             const newReceipt = {
                 verificationCode,
                 receiptTime,
@@ -197,10 +202,13 @@ let ReceiptsService = class ReceiptsService {
         }
         catch (error) {
             console.error(`Error during scraping for ${verificationCode}:`, error);
-            if (error instanceof common_1.ServiceUnavailableException || error instanceof common_1.InternalServerErrorException) {
+            if (error.name === 'TimeoutError') {
+                throw new common_1.GatewayTimeoutException('The verification took too long to respond. Please try again later.');
+            }
+            if (error instanceof common_1.NotFoundException || error instanceof common_1.InternalServerErrorException || error instanceof common_1.ServiceUnavailableException) {
                 throw error;
             }
-            throw new common_1.ServiceUnavailableException('An unexpected error occurred while scraping the receipt data.');
+            throw new common_1.ServiceUnavailableException('An unexpected error occurred while getting the receipt data.');
         }
     }
     async getReceiptById(id) {
