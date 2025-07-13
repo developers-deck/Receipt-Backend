@@ -1,19 +1,55 @@
-import { pgTable, uuid, varchar, timestamp, decimal, jsonb, boolean, text, serial } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, integer, pgEnum } from 'drizzle-orm/pg-core';
 
-export const receiptsTable = pgTable('receipts', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  receiptNumber: varchar('receipt_number', { length: 255 }).notNull().unique(),
-  issueDate: timestamp('issue_date', { withTimezone: true }).notNull(),
-  totalAmount: decimal('total_amount', { precision: 10, scale: 2 }).notNull(),
-  items: jsonb('items'),
-  customerName: varchar('customer_name', { length: 255 }).notNull(),
-  isVerified: boolean('is_verified').default(false).notNull(),
-  verificationDetails: text('verification_details'),
-  verifiedByTRAAt: timestamp('verified_by_tra_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+export const userRole = pgEnum('user_role', ['admin', 'user']);
+
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  username: text('username').notNull().unique(),
+  password: text('password').notNull(),
+  role: userRole('role').default('user'),
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
-// You can define other tables here as well
-// export type InsertReceipt = typeof receiptsTable.$inferInsert;
-// export type SelectReceipt = typeof receiptsTable.$inferSelect;
+export const receipts = pgTable('receipts', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id),
+  companyName: text('company_name'),
+  poBox: text('po_box'),
+  mobile: text('mobile'),
+  tin: text('tin'),
+  vrn: text('vrn'),
+  serialNo: text('serial_no'),
+  uin: text('uin'),
+  taxOffice: text('tax_office'),
+  customerName: text('customer_name'),
+  customerIdType: text('customer_id_type'),
+  customerId: text('customer_id'),
+  customerMobile: text('customer_mobile'),
+  receiptNo: text('receipt_no'),
+  zNumber: text('z_number'),
+  receiptDate: text('receipt_date'),
+  receiptTime: text('receipt_time'),
+  totalExclTax: text('total_excl_tax'),
+  totalTax: text('total_tax'),
+  totalInclTax: text('total_incl_tax'),
+  verificationCode: text('verification_code').notNull().unique(),
+  verificationCodeUrl: text('verification_code_url'),
+  pdfUrl: text('pdf_url'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const purchasedItems = pgTable('purchased_items', {
+  id: serial('id').primaryKey(),
+  receiptId: serial('receipt_id').references(() => receipts.id),
+  description: text('description'),
+  quantity: text('quantity'),
+  amount: text('amount'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type Receipt = typeof receipts.$inferSelect;
+export type NewReceipt = typeof receipts.$inferInsert;
+export type PurchasedItem = typeof purchasedItems.$inferSelect;
+export type NewPurchasedItem = typeof purchasedItems.$inferInsert;
