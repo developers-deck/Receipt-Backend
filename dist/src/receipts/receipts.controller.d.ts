@@ -3,42 +3,9 @@ import { GetReceiptDto } from './dto/get-receipt.dto';
 export declare class ReceiptsController {
     private readonly receiptsService;
     constructor(receiptsService: ReceiptsService);
-    createReceipt(getReceiptDto: GetReceiptDto, req: any): Promise<{
-        id: number;
-        createdAt: Date | null;
-        userId: number;
-        companyName: string | null;
-        poBox: string | null;
-        mobile: string | null;
-        tin: string | null;
-        vrn: string | null;
-        serialNo: string | null;
-        uin: string | null;
-        taxOffice: string | null;
-        customerName: string | null;
-        customerIdType: string | null;
-        customerId: string | null;
-        customerMobile: string | null;
-        receiptNo: string | null;
-        zNumber: string | null;
-        receiptDate: string | null;
-        receiptTime: string | null;
-        totalExclTax: string | null;
-        totalTax: string | null;
-        totalInclTax: string | null;
-        verificationCode: string;
-        verificationCodeUrl: string | null;
-        pdfUrl: string | null;
-    }>;
+    createReceipt(getReceiptDto: GetReceiptDto, req: any): Promise<any>;
     getAllReceipts(): Promise<{
-        items: {
-            id: number;
-            createdAt: Date | null;
-            receiptId: number;
-            description: string | null;
-            quantity: string | null;
-            amount: string | null;
-        }[];
+        items: any;
         id: number;
         createdAt: Date | null;
         userId: number;
@@ -64,16 +31,10 @@ export declare class ReceiptsController {
         verificationCode: string;
         verificationCodeUrl: string | null;
         pdfUrl: string | null;
+        pdfStatus: string | null;
     }[]>;
     getReceiptsForUser(userId: string): Promise<{
-        items: {
-            id: number;
-            createdAt: Date | null;
-            receiptId: number;
-            description: string | null;
-            quantity: string | null;
-            amount: string | null;
-        }[];
+        items: any;
         id: number;
         createdAt: Date | null;
         userId: number;
@@ -99,16 +60,10 @@ export declare class ReceiptsController {
         verificationCode: string;
         verificationCodeUrl: string | null;
         pdfUrl: string | null;
+        pdfStatus: string | null;
     }[]>;
     getMyReceipts(req: any): Promise<{
-        items: {
-            id: number;
-            createdAt: Date | null;
-            receiptId: number;
-            description: string | null;
-            quantity: string | null;
-            amount: string | null;
-        }[];
+        items: any;
         id: number;
         createdAt: Date | null;
         userId: number;
@@ -134,6 +89,7 @@ export declare class ReceiptsController {
         verificationCode: string;
         verificationCodeUrl: string | null;
         pdfUrl: string | null;
+        pdfStatus: string | null;
     }[]>;
     getReceiptById(id: string, req: any): Promise<{
         items: {
@@ -169,5 +125,6 @@ export declare class ReceiptsController {
         verificationCode: string;
         verificationCodeUrl: string | null;
         pdfUrl: string | null;
+        pdfStatus: string | null;
     }>;
 }

@@ -43,7 +43,7 @@ export declare const users: import("drizzle-orm/pg-core").PgTableWithColumns<{
             tableName: "users";
             dataType: "string";
             columnType: "PgVarchar";
-            data: "user" | "admin";
+            data: "admin" | "user";
             driverParam: string;
             notNull: true;
             hasDefault: true;
@@ -354,6 +354,18 @@ export declare const receipts: import("drizzle-orm/pg-core").PgTableWithColumns<
             driverParam: string;
             notNull: false;
             hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        pdfStatus: import("drizzle-orm/pg-core").PgColumn<{
+            name: "pdf_status";
+            tableName: "receipts";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: true;
             enumValues: [string, ...string[]];
             baseColumn: never;
         }, {}, {}>;

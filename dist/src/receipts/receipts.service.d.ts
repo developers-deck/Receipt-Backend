@@ -1,5 +1,4 @@
 import { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { Receipt } from '../db/schema';
 import { DbType } from '../db';
 import { ConfigService } from '@nestjs/config';
 import { FileUploadService } from '../file-upload/file-upload.service';
@@ -9,19 +8,16 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     private fileUploadService;
     private browser;
     private page;
+    private browserInitLock;
+    private pdfGenerator;
+    private scraper;
+    private pdfQueue;
     constructor(db: DbType, configService: ConfigService, fileUploadService: FileUploadService);
     onModuleInit(): Promise<void>;
     private initializeBrowser;
     onModuleDestroy(): Promise<void>;
     getReceiptsByUserId(userId: number): Promise<{
-        items: {
-            id: number;
-            createdAt: Date | null;
-            receiptId: number;
-            description: string | null;
-            quantity: string | null;
-            amount: string | null;
-        }[];
+        items: any;
         id: number;
         createdAt: Date | null;
         userId: number;
@@ -47,16 +43,10 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         verificationCode: string;
         verificationCodeUrl: string | null;
         pdfUrl: string | null;
+        pdfStatus: string | null;
     }[]>;
     getAllReceipts(): Promise<{
-        items: {
-            id: number;
-            createdAt: Date | null;
-            receiptId: number;
-            description: string | null;
-            quantity: string | null;
-            amount: string | null;
-        }[];
+        items: any;
         id: number;
         createdAt: Date | null;
         userId: number;
@@ -82,8 +72,9 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         verificationCode: string;
         verificationCodeUrl: string | null;
         pdfUrl: string | null;
+        pdfStatus: string | null;
     }[]>;
-    getReceipt(verificationCode: string, receiptTime: string, userId: number): Promise<Receipt>;
+    getReceipt(verificationCode: string, receiptTime: string, userId: number): Promise<any>;
     getReceiptById(id: number): Promise<{
         items: {
             id: number;
@@ -118,17 +109,11 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         verificationCode: string;
         verificationCodeUrl: string | null;
         pdfUrl: string | null;
+        pdfStatus: string | null;
     } | null>;
     private generateReceiptPdf;
     getReceiptsByCompanyName(companyName: string): Promise<{
-        items: {
-            id: number;
-            createdAt: Date | null;
-            receiptId: number;
-            description: string | null;
-            quantity: string | null;
-            amount: string | null;
-        }[];
+        items: any;
         id: number;
         createdAt: Date | null;
         userId: number;
@@ -154,5 +139,6 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         verificationCode: string;
         verificationCodeUrl: string | null;
         pdfUrl: string | null;
+        pdfStatus: string | null;
     }[]>;
 }

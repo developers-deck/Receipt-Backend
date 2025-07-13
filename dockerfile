@@ -10,12 +10,11 @@ RUN npm install -g pnpm@10.11.0
 
 # Copy package manager files
 # The '*' handles cases where the lockfile might not exist initially.
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json ./
 
 # Install all dependencies
-# Using --frozen-lockfile is best practice for CI/build environments
-# to ensure reproducible builds.
-RUN pnpm install --frozen-lockfile
+# Lock files are intentionally not used for this build to allow auto-generation on install.
+RUN pnpm install
 
 # Copy the rest of the source code
 COPY . .
@@ -35,10 +34,10 @@ WORKDIR /app
 RUN npm install -g pnpm@10.11.0
 
 # Copy dependency files from the builder stage
-COPY --from=builder /app/package.json /app/pnpm-lock.yaml* ./
+COPY --from=builder /app/package.json ./
 
-# Install only production dependencies. This creates a smaller image.
-RUN pnpm install --prod --frozen-lockfile
+# Install only production dependencies. Lock files are intentionally not used.
+RUN pnpm install --prod
 
 # Copy the built application from the builder stage
 COPY --from=builder /app/dist ./dist

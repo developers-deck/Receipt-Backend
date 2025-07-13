@@ -35,6 +35,7 @@ export const receipts = pgTable('receipts', {
   verificationCode: text('verification_code').notNull().unique(),
   verificationCodeUrl: text('verification_code_url'),
   pdfUrl: text('pdf_url'), // Link to the PDF stored in Backblaze B2
+  pdfStatus: text('pdf_status').default('pending'), // 'pending' | 'processing' | 'done' | 'failed'
   createdAt: timestamp('created_at').defaultNow(),
 });
 

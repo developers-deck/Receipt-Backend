@@ -34,6 +34,7 @@ exports.receipts = (0, pg_core_1.pgTable)('receipts', {
     verificationCode: (0, pg_core_1.text)('verification_code').notNull().unique(),
     verificationCodeUrl: (0, pg_core_1.text)('verification_code_url'),
     pdfUrl: (0, pg_core_1.text)('pdf_url'),
+    pdfStatus: (0, pg_core_1.text)('pdf_status').default('pending'),
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
 });
 exports.purchasedItems = (0, pg_core_1.pgTable)('purchased_items', {
