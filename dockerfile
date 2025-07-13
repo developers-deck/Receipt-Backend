@@ -33,11 +33,9 @@ WORKDIR /app
 # We need to install the correct version of pnpm.
 RUN npm install -g pnpm@10.11.0
 
-# Copy dependency files from the builder stage
+# Copy dependency files and node_modules from the builder stage
 COPY --from=builder /app/package.json ./
-
-# Install only production dependencies. Lock files are intentionally not used.
-RUN pnpm install --prod
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copy the built application from the builder stage
 COPY --from=builder /app/dist ./dist

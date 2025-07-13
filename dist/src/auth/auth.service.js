@@ -18,7 +18,7 @@ const jwt_1 = require("@nestjs/jwt");
 const db_provider_1 = require("../db/db.provider");
 const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 let AuthService = class AuthService {
     db;
     jwtService;
