@@ -1,4 +1,5 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import { Inject, Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../db/schema';
@@ -18,6 +19,8 @@ export class CreateReceiptDto {
   verificationSecret: string; // The HH:MM:SS secret for TRA API
 }
 =======
+=======
+>>>>>>> Stashed changes
 import { Injectable, OnModuleInit, OnModuleDestroy, Inject, InternalServerErrorException, ServiceUnavailableException, NotFoundException, GatewayTimeoutException, ForbiddenException } from '@nestjs/common';
 import { chromium, Browser, Page } from 'playwright';
 import { DB_PROVIDER } from '../db/db.provider';
@@ -26,6 +29,9 @@ import { DbType } from '../db/index';
 import { inArray, eq } from 'drizzle-orm';
 import { ConfigService } from '@nestjs/config';
 import { FileUploadService } from '../file-upload/file-upload.service';
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 @Injectable()
@@ -343,6 +349,7 @@ export class ReceiptsService {
   }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   async createAndVerifyReceipt(createReceiptDto: CreateReceiptDto): Promise<typeof schema.receiptsTable['$inferSelect']> {
     const { verificationSecret } = createReceiptDto;
 
@@ -439,6 +446,8 @@ export class ReceiptsService {
     const text = element.find(`b:contains("${label}")`).parent().text();
     return this.cleanText(text.replace(label, ''));
 =======
+=======
+>>>>>>> Stashed changes
   async getReceiptById(id: number, user: { userId: number, role: string }) {
     const receiptResult = await this.db.select().from(receipts).where(eq(receipts.id, id)).limit(1);
     if (!receiptResult || receiptResult.length === 0) {
@@ -468,6 +477,63 @@ export class ReceiptsService {
       items: allItems.filter(item => item.receiptId === receipt.id)
     }));
 >>>>>>> Stashed changes
+  }
+
+  private async generateReceiptPdf(receipt: Receipt, items: any[]): Promise<Buffer> {
+    const htmlContent = `
+      <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; margin: 40px; }
+            h1 { text-align: center; color: #333; }
+            .receipt-details { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+            .receipt-details td { border: 1px solid #ddd; padding: 8px; }
+            .receipt-details td:first-child { font-weight: bold; width: 30%; }
+            .items-table { border-collapse: collapse; width: 100%; }
+            .items-table th, .items-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            .items-table th { background-color: #f2f2f2; }
+          </style>
+        </head>
+        <body>
+          <h1>Tax Invoice</h1>
+          <table class="receipt-details">
+            <tr><td>Company Name:</td><td>${receipt.companyName}</td></tr>
+            <tr><td>TIN:</td><td>${receipt.tin}</td></tr>
+            <tr><td>Receipt No:</td><td>${receipt.receiptNo}</td></tr>
+            <tr><td>Date:</td><td>${receipt.receiptDate}</td></tr>
+            <tr><td>Total:</td><td>${receipt.totalInclTax}</td></tr>
+          </table>
+          <h2>Purchased Items</h2>
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map(item => `
+                <tr>
+                  <td>${item.description}</td>
+                  <td>${item.quantity}</td>
+                  <td>${item.amount}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    if (!this.page) {
+        throw new ServiceUnavailableException('Browser page is not available to generate PDF.');
+    }
+
+    await this.page.setContent(htmlContent, { waitUntil: 'networkidle' });
+    const pdfBuffer = await this.page.pdf({ format: 'A4', printBackground: true });
+
+    return pdfBuffer;
   }
 
   private async generateReceiptPdf(receipt: Receipt, items: any[]): Promise<Buffer> {

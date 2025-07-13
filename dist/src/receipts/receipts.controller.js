@@ -11,12 +11,13 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReceiptsController = void 0;
 const common_1 = require("@nestjs/common");
 const receipts_service_1 = require("./receipts.service");
+const create_receipt_dto_1 = require("./dto/create-receipt.dto");
 const roles_guard_1 = require("../auth/roles.guard");
-const roles_decorator_1 = require("../auth/roles.decorator");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const get_receipt_dto_1 = require("./dto/get-receipt.dto");
 let ReceiptsController = class ReceiptsController {
@@ -24,62 +25,77 @@ let ReceiptsController = class ReceiptsController {
     constructor(receiptsService) {
         this.receiptsService = receiptsService;
     }
-    async getAllReceipts() {
-        return await this.receiptsService.getAllReceipts();
-    }
-    async getReceipt(req, getReceiptDto) {
-        const { verificationCode, receiptTime } = getReceiptDto;
-        const receipt = await this.receiptsService.getReceipt(verificationCode, receiptTime, req.user.userId);
-        if (!receipt) {
-            throw new common_1.NotFoundException('Failed to get receipt data.');
+    async create(createReceiptDto) {
+        try {
+            return await this.receiptsService.createAndVerifyReceipt(createReceiptDto);
         }
-        return receipt;
-    }
-    async getMyReceipts(req) {
-        return await this.receiptsService.getReceiptsByUserId(req.user.userId);
-    }
-    async getReceiptById(id, req) {
-        const receipt = await this.receiptsService.getReceiptById(+id, req.user);
-        if (!receipt) {
-            throw new common_1.NotFoundException(`Receipt with ID ${id} not found`);
+        catch (error) {
+            if (error instanceof common_1.BadRequestException) {
+                throw error;
+            }
+            if (error.code === '23505') {
+                throw new common_1.BadRequestException('Receipt number already exists');
+            }
+            throw error;
         }
-        return receipt;
+    }
+    async findAll() {
+        return this.receiptsService.findAll();
+    }
+    async findOne(id) {
+        const receipt = await this.receiptsService.findOne(id);
+        getAllReceipts();
+        {
+            return await this.receiptsService.getAllReceipts();
+        }
+        getReceipt(, req, , getReceiptDto, get_receipt_dto_1.GetReceiptDto);
+        {
+            const { verificationCode, receiptTime } = getReceiptDto;
+            const receipt = await this.receiptsService.getReceipt(verificationCode, receiptTime, req.user.userId);
+            if (!receipt) {
+                throw new common_1.NotFoundException('Failed to get receipt data.');
+            }
+            return receipt;
+        }
+        getMyReceipts(, req);
+        {
+            return await this.receiptsService.getReceiptsByUserId(req.user.userId);
+        }
+        getReceiptById(, id, string, , req);
+        {
+            const receipt = await this.receiptsService.getReceiptById(+id, req.user);
+            if (!receipt) {
+                throw new common_1.NotFoundException(`Receipt with ID ${id} not found`);
+            }
+            return receipt;
+        }
     }
 };
 exports.ReceiptsController = ReceiptsController;
 __decorate([
+    (0, common_1.Post)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_receipt_dto_1.CreateReceiptDto]),
+    __metadata("design:returntype", typeof (_a = typeof Promise !== "undefined" && Promise) === "function" ? _a : Object)
+], ReceiptsController.prototype, "create", null);
+__decorate([
     (0, common_1.Get)(),
-    (0, roles_decorator_1.Roles)('admin'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], ReceiptsController.prototype, "getAllReceipts", null);
-__decorate([
-    (0, common_1.Post)(),
-    __param(0, (0, common_1.Request)()),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, get_receipt_dto_1.GetReceiptDto]),
-    __metadata("design:returntype", Promise)
-], ReceiptsController.prototype, "getReceipt", null);
-__decorate([
-    (0, common_1.Get)('my-receipts'),
-    __param(0, (0, common_1.Request)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], ReceiptsController.prototype, "getMyReceipts", null);
+    __metadata("design:returntype", typeof (_b = typeof Promise !== "undefined" && Promise) === "function" ? _b : Object)
+], ReceiptsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Request)()),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", Promise)
-], ReceiptsController.prototype, "getReceiptById", null);
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_c = typeof Promise !== "undefined" && Promise) === "function" ? _c : Object)
+], ReceiptsController.prototype, "findOne", null);
 exports.ReceiptsController = ReceiptsController = __decorate([
     (0, common_1.Controller)('receipts'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    UseGuards(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     __metadata("design:paramtypes", [receipts_service_1.ReceiptsService])
 ], ReceiptsController);
 //# sourceMappingURL=receipts.controller.js.map

@@ -11,9 +11,11 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
+const db_1 = require("../db");
 const db_provider_1 = require("../db/db.provider");
 const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
@@ -40,6 +42,6 @@ exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)(db_provider_1.DB_PROVIDER)),
-    __metadata("design:paramtypes", [Object])
+    __metadata("design:paramtypes", [typeof (_a = typeof db_1.DbType !== "undefined" && db_1.DbType) === "function" ? _a : Object])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

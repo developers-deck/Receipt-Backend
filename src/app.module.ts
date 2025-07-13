@@ -10,6 +10,9 @@ import { DbModule } from './db/db.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { FileUploadModule } from './file-upload/file-upload.module';
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 @Module({
@@ -22,6 +25,9 @@ import { FileUploadModule } from './file-upload/file-upload.module';
     AuthModule,
     UsersModule,
     FileUploadModule,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
   ],
   controllers: [AppController],

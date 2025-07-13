@@ -24,6 +24,7 @@
   },
   "dependencies": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "@nestjs/axios": "^4.0.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
@@ -61,6 +62,8 @@
     "jest": "^29.7.0",
     "prettier": "^3.4.2",
 =======
+=======
+>>>>>>> Stashed changes
     "@aws-sdk/client-s3": "^3.577.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.2",

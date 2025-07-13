@@ -1,4 +1,5 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import { Controller, Post, Body, HttpCode, HttpStatus, Get, Param, ParseUUIDPipe, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ReceiptsService } from './receipts.service';
 import { CreateReceiptDto } from './dto/create-receipt.dto';
@@ -7,10 +8,17 @@ import * as schema from '../db/schema';
 =======
 import { Controller, Get, Param, NotFoundException, UseGuards, Request, Post, Body } from '@nestjs/common';
 import { ReceiptsService } from './receipts.service';
+=======
+import { Controller, Get, Param, NotFoundException, UseGuards, Request, Post, Body } from '@nestjs/common';
+import { ReceiptsService } from './receipts.service';
+>>>>>>> Stashed changes
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GetReceiptDto } from './dto/get-receipt.dto';
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 @Controller('receipts')
@@ -36,6 +44,7 @@ export class ReceiptsController {
 
   @Get()
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   async findAll(): Promise<typeof schema.receiptsTable['$inferSelect'][]> {
     return this.receiptsService.findAll();
   }
@@ -44,6 +53,8 @@ export class ReceiptsController {
   async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<typeof schema.receiptsTable['$inferSelect']> {
     const receipt = await this.receiptsService.findOne(id);
 =======
+=======
+>>>>>>> Stashed changes
   @Roles('admin')
   async getAllReceipts() {
     return await this.receiptsService.getAllReceipts();
@@ -67,6 +78,9 @@ export class ReceiptsController {
   @Get(':id')
   async getReceiptById(@Param('id') id: string, @Request() req) {
     const receipt = await this.receiptsService.getReceiptById(+id, req.user);
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     if (!receipt) {
       throw new NotFoundException(`Receipt with ID ${id} not found`);
