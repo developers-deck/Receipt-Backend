@@ -1,10 +1,14 @@
 import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { DB_PROVIDER } from 'src/db/db.provider';
-import { DbType } from 'src/db';
 import { users, NewUser } from 'src/db/schema';
 import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcryptjs';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from 'src/db/schema';
+
+// Define the database type
+type DbType = ReturnType<typeof drizzle<typeof schema>>;
 
 @Injectable()
 export class AuthService {

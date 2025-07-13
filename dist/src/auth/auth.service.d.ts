@@ -1,6 +1,8 @@
 import { JwtService } from '@nestjs/jwt';
-import { DbType } from 'src/db';
 import { NewUser } from 'src/db/schema';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from 'src/db/schema';
+type DbType = ReturnType<typeof drizzle<typeof schema>>;
 export declare class AuthService {
     private db;
     private jwtService;
@@ -11,3 +13,4 @@ export declare class AuthService {
     }>;
     createUser(createUserDto: NewUser): Promise<any>;
 }
+export {};

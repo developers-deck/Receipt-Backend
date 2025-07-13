@@ -1,7 +1,9 @@
 import { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { DbType } from '../db';
 import { ConfigService } from '@nestjs/config';
 import { FileUploadService } from '../file-upload/file-upload.service';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from '../db/schema';
+type DbType = ReturnType<typeof drizzle<typeof schema>>;
 export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     private db;
     private configService;
@@ -142,3 +144,4 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         pdfStatus: string | null;
     }[]>;
 }
+export {};

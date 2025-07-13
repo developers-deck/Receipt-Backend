@@ -2,7 +2,6 @@ import { Injectable, OnModuleInit, OnModuleDestroy, Inject, InternalServerErrorE
 import { chromium, Browser, Page } from 'playwright';
 import { DB_PROVIDER } from '../db/db.provider';
 import { receipts, NewReceipt, purchasedItems, Receipt } from '../db/schema';
-import { DbType } from '../db';
 import { inArray, eq } from 'drizzle-orm';
 import { ConfigService } from '@nestjs/config';
 import { FileUploadService } from '../file-upload/file-upload.service';
@@ -11,6 +10,11 @@ import { Mutex } from 'async-mutex';
 import { PdfGeneratorService } from './pdf-generator.service';
 import { ScraperService, ScrapedReceiptData } from './scraper.service';
 import { PdfQueueService } from './pdf-queue.service';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from '../db/schema';
+
+// Define the database type
+type DbType = ReturnType<typeof drizzle<typeof schema>>;
 
 function safeClosePage(page: Page | null) {
   if (page) {
