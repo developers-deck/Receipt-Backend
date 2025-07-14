@@ -44,6 +44,8 @@ export const receipts = pgTable('receipts', {
   };
 });
 
+
+
 // Purchased Items Table: Stores individual items from each receipt
 export const purchasedItems = pgTable('purchased_items', {
   id: serial('id').primaryKey(),

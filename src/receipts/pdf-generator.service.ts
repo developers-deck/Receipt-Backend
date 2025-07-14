@@ -28,27 +28,28 @@ export class PdfGeneratorService {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Legal Receipt</title>
           <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:400,700&display=swap" rel="stylesheet">
-          <style>
+                    <style>
               body {
-                  width: 210mm; /* A4 width */
-                  height: 297mm; /* A4 height */
                   margin: 0;
                   padding: 0;
                   background-color: #f0f2f5;
                   display: flex;
                   align-items: center;
                   justify-content: center;
+                  min-height: 100vh;
                   font-family: 'Helvetica Neue', 'Nunito Sans', Arial, Helvetica, sans-serif;
                   color: #333;
                   font-size: 14px; /* Base font size */
               }
               .receipt-container {
-                  width: 340px;
+                  width: 80mm; /* A more realistic receipt width */
+                  max-height: 277mm; /* A4 height minus some padding */
                   background: #fff;
                   border: 1px solid #e0e0e0;
                   padding: 20px;
                   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
                   box-sizing: border-box;
+                  transform-origin: center center;
               }
               .header, .footer { text-align: center; font-weight: bold; color: #888; margin-bottom: 8px; font-size: 0.9em; }
               .logo { display: block; margin: 0 auto 8px auto; height: 50px; }

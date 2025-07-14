@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy, Inject, InternalServerErrorE
 import { chromium, Browser, Page } from 'playwright';
 import { DB_PROVIDER } from '../db/db.provider';
 import { receipts, NewReceipt, purchasedItems, Receipt } from '../db/schema';
-import { inArray, eq } from 'drizzle-orm';
+import { and, eq, ilike, sql, inArray } from 'drizzle-orm';
 import { ConfigService } from '@nestjs/config';
 import { FileUploadService } from '../file-upload/file-upload.service';
 import * as QRCode from 'qrcode';
@@ -135,6 +135,58 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     }));
   }
 
+  async findAll(
+    user: schema.User | null, // null for admin fetching all receipts
+    options: {
+      page: number;
+      limit: number;
+      companyName?: string;
+      customerName?: string;
+      tin?: string;
+    },
+  ) {
+    const { page, limit, companyName, customerName, tin } = options;
+    const offset = (page - 1) * limit;
+
+    const whereClauses: any[] = [];
+    if (user) {
+      whereClauses.push(eq(receipts.userId, user.id));
+    }
+    if (companyName) {
+      whereClauses.push(ilike(receipts.companyName, `%${companyName}%`));
+    }
+    if (customerName) {
+      whereClauses.push(ilike(receipts.customerName, `%${customerName}%`));
+    }
+    if (tin) {
+      whereClauses.push(eq(receipts.tin, tin));
+    }
+
+    const query = this.db.query.receipts.findMany({
+      where: and(...whereClauses),
+      limit: limit,
+      offset: offset,
+      orderBy: (receipts, { desc }) => [desc(receipts.createdAt)],
+    });
+
+    const totalReceipts = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(receipts)
+      .where(and(...whereClauses));
+
+    const data = await query;
+
+    return {
+      data,
+      meta: {
+        total: totalReceipts[0].count,
+        page,
+        limit,
+        lastPage: Math.ceil(totalReceipts[0].count / limit),
+      },
+    };
+  }
+
   async getReceipt(verificationCode: string, receiptTime: string, userId: string): Promise<any> {
     if (!this.browser || !this.browser.isConnected()) {
       console.log('Browser is not connected. Re-initializing...');
@@ -199,6 +251,7 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
           receiptNo: scraped.details['Receipt No:'] || '',
           zNumber: scraped.details['Z-Number:'] || '',
           receiptDate: scraped.receiptDate,
+          receiptTime: scraped.receiptTime,
           totalExclTax: scraped.totalAmounts.find(t => t.label === 'TOTAL EXCL OF TAX:')?.amount || '0',
           totalTax: scraped.totalAmounts.find(t => t.label === 'TOTAL TAX:')?.amount || '0',
           totalInclTax: scraped.totalAmounts.find(t => t.label === 'TOTAL INCL OF TAX:')?.amount || '0',
@@ -288,7 +341,11 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     try {
       const htmlContent = await this.pdfGenerator.generateReceiptPdf(receiptData);
       await page.setContent(htmlContent, { waitUntil: 'networkidle' });
-      return await page.pdf({ format: 'A4', printBackground: true });
+            return await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '0', right: '0', bottom: '0', left: '0' },
+      });
     } finally {
       await safeClosePage(page);
     }

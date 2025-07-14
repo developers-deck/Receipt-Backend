@@ -13,6 +13,7 @@ export interface ScrapedReceiptData {
   items: Array<{ description: string; qty: string; amount: string }>;
   totalAmounts: Array<{ label: string; amount: string }>;
   receiptDate: string;
+  receiptTime: string;
 }
 
 @Injectable()
@@ -95,6 +96,7 @@ export class ScraperService {
       const poBox = extractValue('P.O BOX');
       const mobile = extractValue('MOBILE');
       const receiptDate = extractValue('RECEIPT DATE');
+      const receiptTime = extractValue('TIME');
 
       const details = {
         'TIN:': extractValue('TIN'),
@@ -108,6 +110,8 @@ export class ScraperService {
         'Customer Mobile:': extractValue('CUSTOMER MOBILE'),
         'Receipt No:': extractValue('RECEIPT NO'),
         'Z-Number:': extractValue('Z NUMBER'),
+        'Receipt Date:': receiptDate,
+        'Receipt Time:': receiptTime,
       };
 
       const items = Array.from(
@@ -137,6 +141,7 @@ export class ScraperService {
         mobile,
         details,
         receiptDate,
+        receiptTime,
         items,
         totalAmounts,
       };

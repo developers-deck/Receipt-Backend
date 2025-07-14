@@ -1,10 +1,11 @@
-import { Controller, Post, Body, Get, Param, UseGuards, Request, UnauthorizedException, NotFoundException, Delete, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UseGuards, Request, UnauthorizedException, NotFoundException, Delete, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { ReceiptsService } from './receipts.service';
 import { GetReceiptDto } from './dto/get-receipt.dto';
 import { Roles } from 'src/auth/roles.decorator';
 import { Role } from 'src/auth/enums/role.enum';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/roles.guard';
+import { User } from '../db/schema';
 
 @Controller('receipts')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -21,8 +22,20 @@ export class ReceiptsController {
 
   @Get()
   @Roles(Role.Admin)
-  async getAllReceipts() {
-    return this.receiptsService.getAllReceipts();
+  async getAllReceipts(
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('companyName') companyName?: string,
+    @Query('customerName') customerName?: string,
+    @Query('tin') tin?: string,
+  ) {
+    return this.receiptsService.findAll(null, {
+      page: +page,
+      limit: +limit,
+      companyName,
+      customerName,
+      tin,
+    });
   }
 
   @Get('user/:userId')
@@ -34,9 +47,22 @@ export class ReceiptsController {
 
   @Get('mine')
   @Roles(Role.User, Role.Admin)
-  async getMyReceipts(@Request() req) {
-    const userId = req.user.userId;
-    return this.receiptsService.getReceiptsByUserId(userId);
+  async findMyReceipts(
+    @Request() req,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('companyName') companyName?: string,
+    @Query('customerName') customerName?: string,
+    @Query('tin') tin?: string,
+  ) {
+    const user = req.user as User;
+    return this.receiptsService.findAll(user, {
+      page: +page,
+      limit: +limit,
+      companyName,
+      customerName,
+      tin,
+    });
   }
 
   @Get(':id')
