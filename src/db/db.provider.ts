@@ -1,10 +1,11 @@
 import { Injectable, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { NodePgDatabase, drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
 
 export const DB_PROVIDER = 'DB_PROVIDER';
+export type DbType = NodePgDatabase<typeof schema>;
 
 export const dbProvider = {
   provide: DB_PROVIDER,
