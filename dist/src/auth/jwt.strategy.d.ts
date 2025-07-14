@@ -4,7 +4,7 @@ export declare class JwtStrategy extends JwtStrategy_base {
     private readonly jwtSecret;
     constructor(jwtSecret: string);
     validate(payload: any): Promise<{
-        userId: any;
+        id: any;
         username: any;
         role: any;
     }>;

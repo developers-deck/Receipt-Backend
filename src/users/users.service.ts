@@ -15,7 +15,7 @@ export class UsersService {
     private readonly fileUploadService: FileUploadService,
   ) {}
 
-  async findOneWithReceipts(userId: string) {
+  async findOne(userId: string) {
     const user = await this.db.query.users.findFirst({
       where: eq(users.id, userId),
     });
@@ -24,15 +24,8 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    const userReceipts = await this.receiptsService.getReceiptsByUserId(user.id);
     const { passwordHash, ...userWithoutPassword } = user;
-    return {
-      status: 'success',
-      data: {
-        ...userWithoutPassword,
-        receipts: userReceipts,
-      },
-    };
+    return userWithoutPassword;
   }
 
   async deleteUser(userId: string) {
@@ -84,23 +77,20 @@ export class UsersService {
     return { message: `User with ID ${userId} has been updated.` };
   }
 
-  async findAllWithReceipts() {
-    const allUsers = await this.db.select().from(users);
+  async findAll() {
+    const allUsers = await this.db.query.users.findMany();
 
-    const usersWithReceipts = await Promise.all(
-      allUsers.map(async (user) => {
-        const userReceipts = await this.receiptsService.getReceiptsByUserId(user.id);
-        const { passwordHash, ...userWithoutPassword } = user;
-        return {
-          ...userWithoutPassword,
-          receipts: userReceipts,
-        };
-      }),
-    );
+    // Exclude password hash from the result
+    return allUsers.map(user => {
+      const { passwordHash, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
+  }
 
-    return {
-      status: 'success',
-      data: usersWithReceipts,
-    };
+  async findReceiptsForUser(userId: string, options: { page: number; limit: number; companyName?: string; customerName?: string; tin?: string }) {
+    // Find user for proper scoping (findAll expects user object or null)
+    const user = await this.db.query.users.findFirst({ where: eq(users.id, userId) });
+    if (!user) throw new NotFoundException(`User with ID ${userId} not found`);
+    return this.receiptsService.findAll(user, options);
   }
 }

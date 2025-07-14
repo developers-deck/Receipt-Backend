@@ -1,25 +1,28 @@
-import { Controller, Post, Body, Get, Param, UseGuards, Request, UnauthorizedException, NotFoundException, Delete, HttpCode, HttpStatus, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UseGuards, Request, Delete, HttpCode, HttpStatus, Query, Response, Res, Logger } from '@nestjs/common';
 import { ReceiptsService } from './receipts.service';
 import { GetReceiptDto } from './dto/get-receipt.dto';
-import { Roles } from 'src/auth/roles.decorator';
-import { Role } from 'src/auth/enums/role.enum';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { RolesGuard } from 'src/auth/roles.guard';
-import { User } from '../db/schema';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { Role } from '../auth/enums/role.enum';
+import { Response as ExpressResponse } from 'express';
 
 @Controller('receipts')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ReceiptsController {
+  private readonly logger = new Logger(ReceiptsController.name);
+
   constructor(private readonly receiptsService: ReceiptsService) {}
 
+  // 1. Create a new receipt (scrape and save)
   @Post()
   @Roles(Role.User, Role.Admin)
   async createReceipt(@Body() getReceiptDto: GetReceiptDto, @Request() req) {
-    const { verificationCode, receiptTime } = getReceiptDto;
-    const userId = req.user.userId;
-    return this.receiptsService.getReceipt(verificationCode, receiptTime, userId);
+    const userId = req.user.sub;
+    return this.receiptsService.createReceipt(getReceiptDto, userId);
   }
 
+  // 2. List all receipts (admin only, paginated, filterable)
   @Get()
   @Roles(Role.Admin)
   async getAllReceipts(
@@ -29,22 +32,10 @@ export class ReceiptsController {
     @Query('customerName') customerName?: string,
     @Query('tin') tin?: string,
   ) {
-    return this.receiptsService.findAll(null, {
-      page: +page,
-      limit: +limit,
-      companyName,
-      customerName,
-      tin,
-    });
+    return this.receiptsService.findAll(null, { page: +page, limit: +limit, companyName, customerName, tin });
   }
 
-  @Get('user/:userId')
-  @Roles(Role.Admin)
-  async getReceiptsForUser(@Param('userId') userId: string) {
-    // This endpoint is for admins to get all receipts for a specific user.
-    return this.receiptsService.getReceiptsByUserId(userId);
-  }
-
+  // 3. List receipts for the current user (paginated, filterable)
   @Get('mine')
   @Roles(Role.User, Role.Admin)
   async findMyReceipts(
@@ -55,45 +46,42 @@ export class ReceiptsController {
     @Query('customerName') customerName?: string,
     @Query('tin') tin?: string,
   ) {
-    const user = req.user as User;
-    return this.receiptsService.findAll(user, {
-      page: +page,
-      limit: +limit,
-      companyName,
-      customerName,
-      tin,
-    });
+    this.logger.log(`[findMyReceipts] - Initiated for user: ${JSON.stringify(req.user)}`);
+    console.log('req.user:', req.user);
+    const user = { id: req.user.id };
+    return this.receiptsService.findAll(user, { page: +page, limit: +limit, companyName, customerName, tin });
   }
 
+  // 4. Get a single receipt by ID
   @Get(':id')
-  @Roles(Role.Admin, Role.User)
+  @Roles(Role.User, Role.Admin)
   async getReceiptById(@Param('id') id: string, @Request() req) {
-    const receiptId = id;
-    const requestingUser = req.user;
-
-    const receipt = await this.receiptsService.getReceiptById(receiptId);
-
-    if (!receipt) {
-      throw new NotFoundException(`Receipt with ID ${id} not found`);
-    }
-
-    // Enforce data isolation: Users can only access their own receipts.
-    if (requestingUser.role !== Role.Admin && receipt.userId !== requestingUser.userId) {
-      throw new UnauthorizedException('You are not authorized to access this receipt.');
-    }
-
-    return receipt;
+    return this.receiptsService.getReceiptById(id, req.user);
   }
 
+  // 5. Delete a receipt by ID
   @Delete(':id')
   @Roles(Role.User, Role.Admin)
-  @HttpCode(HttpStatus.NO_CONTENT) // Return 204 No Content on success
+  @HttpCode(HttpStatus.NO_CONTENT)
   async deleteReceipt(@Param('id') id: string, @Request() req) {
-    const receiptId = parseInt(id, 10);
-    if (isNaN(receiptId)) {
-      throw new NotFoundException(`Invalid receipt ID: ${id}`);
-    }
+    await this.receiptsService.deleteReceipt(id, req.user);
+  }
 
-    await this.receiptsService.deleteReceipt(receiptId, req.user);
+  // 6. Export/download a receipt PDF (User/Admin)
+  @Get(':id/pdf')
+  @HttpCode(200)
+  async downloadPdf(@Param('id') id: string, @Request() req, @Res() res: ExpressResponse) {
+    const pdfBuffer = await this.receiptsService.exportReceiptPdf(id, req.user);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=receipt-${id}.pdf`);
+    res.send(pdfBuffer);
+  }
+
+  // User stats endpoint
+  @Get('mine/stats')
+  @Roles(Role.User, Role.Admin)
+  async getMyStats(@Request() req) {
+    const user = { id: req.user.id };
+    return this.receiptsService.getUserStats(user);
   }
 }

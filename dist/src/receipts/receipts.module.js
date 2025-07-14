@@ -13,6 +13,7 @@ const receipts_controller_1 = require("./receipts.controller");
 const db_module_1 = require("../db/db.module");
 const redis_module_1 = require("../redis/redis.module");
 const file_upload_module_1 = require("../file-upload/file-upload.module");
+const playwright_module_1 = require("../playwright/playwright.module");
 const pdf_generator_service_1 = require("./pdf-generator.service");
 const scraper_service_1 = require("./scraper.service");
 const pdf_queue_service_1 = require("./pdf-queue.service");
@@ -21,7 +22,7 @@ let ReceiptsModule = class ReceiptsModule {
 exports.ReceiptsModule = ReceiptsModule;
 exports.ReceiptsModule = ReceiptsModule = __decorate([
     (0, common_1.Module)({
-        imports: [db_module_1.DbModule, file_upload_module_1.FileUploadModule, redis_module_1.RedisModule],
+        imports: [db_module_1.DbModule, file_upload_module_1.FileUploadModule, redis_module_1.RedisModule, playwright_module_1.PlaywrightModule],
         controllers: [receipts_controller_1.ReceiptsController],
         providers: [
             receipts_service_1.ReceiptsService,

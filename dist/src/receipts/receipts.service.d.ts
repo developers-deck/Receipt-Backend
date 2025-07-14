@@ -1,86 +1,25 @@
-import { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { FileUploadService } from '../file-upload/file-upload.service';
-import { PdfGeneratorService } from './pdf-generator.service';
+import { GetReceiptDto } from './dto/get-receipt.dto';
+import { DbType } from '../db/db.provider';
 import { ScraperService } from './scraper.service';
 import { PdfQueueService } from './pdf-queue.service';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from '../db/schema';
-type DbType = ReturnType<typeof drizzle<typeof schema>>;
-export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
+import { FileUploadService } from '../file-upload/file-upload.service';
+import { PdfGeneratorService } from './pdf-generator.service';
+import { PlaywrightService } from '../playwright/playwright.service';
+export declare class ReceiptsService {
     private db;
-    private configService;
-    private fileUploadService;
-    private readonly pdfGenerator;
     private readonly scraper;
     private readonly pdfQueue;
-    private browser;
-    private browserInitLock;
-    constructor(db: DbType, configService: ConfigService, fileUploadService: FileUploadService, pdfGenerator: PdfGeneratorService, scraper: ScraperService, pdfQueue: PdfQueueService);
-    onModuleInit(): Promise<void>;
-    private initializeBrowser;
-    onModuleDestroy(): Promise<void>;
-    getReceiptsByUserId(userId: string): Promise<{
-        items: any;
-        id: number;
-        createdAt: Date | null;
-        userId: string;
-        companyName: string | null;
-        poBox: string | null;
-        mobile: string | null;
-        tin: string | null;
-        vrn: string | null;
-        serialNo: string | null;
-        uin: string | null;
-        taxOffice: string | null;
-        customerName: string | null;
-        customerIdType: string | null;
-        customerId: string | null;
-        customerMobile: string | null;
-        receiptNo: string | null;
-        zNumber: string | null;
-        receiptDate: string | null;
-        receiptTime: string | null;
-        totalExclTax: string | null;
-        totalTax: string | null;
-        totalInclTax: string | null;
-        verificationCode: string;
-        verificationCodeUrl: string | null;
-        receiptDataHash: string;
-        pdfUrl: string | null;
-        pdfStatus: string | null;
-    }[]>;
-    getAllReceipts(): Promise<{
-        items: any;
-        id: number;
-        createdAt: Date | null;
-        userId: string;
-        companyName: string | null;
-        poBox: string | null;
-        mobile: string | null;
-        tin: string | null;
-        vrn: string | null;
-        serialNo: string | null;
-        uin: string | null;
-        taxOffice: string | null;
-        customerName: string | null;
-        customerIdType: string | null;
-        customerId: string | null;
-        customerMobile: string | null;
-        receiptNo: string | null;
-        zNumber: string | null;
-        receiptDate: string | null;
-        receiptTime: string | null;
-        totalExclTax: string | null;
-        totalTax: string | null;
-        totalInclTax: string | null;
-        verificationCode: string;
-        verificationCodeUrl: string | null;
-        receiptDataHash: string;
-        pdfUrl: string | null;
-        pdfStatus: string | null;
-    }[]>;
-    findAll(user: schema.User | null, options: {
+    private readonly fileUploadService;
+    private readonly pdfGenerator;
+    private readonly playwrightService;
+    constructor(db: DbType, scraper: ScraperService, pdfQueue: PdfQueueService, fileUploadService: FileUploadService, pdfGenerator: PdfGeneratorService, playwrightService: PlaywrightService);
+    createReceipt(getReceiptDto: GetReceiptDto, userId: string): Promise<{
+        status: string;
+        receiptId: any;
+    }>;
+    findAll(user: {
+        id: string;
+    } | null, options: {
         page: number;
         limit: number;
         companyName?: string;
@@ -88,6 +27,8 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         tin?: string;
     }): Promise<{
         data: {
+            verificationCode: string;
+            receiptTime: string | null;
             id: number;
             createdAt: Date | null;
             userId: string;
@@ -106,11 +47,9 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
             receiptNo: string | null;
             zNumber: string | null;
             receiptDate: string | null;
-            receiptTime: string | null;
             totalExclTax: string | null;
             totalTax: string | null;
             totalInclTax: string | null;
-            verificationCode: string;
             verificationCodeUrl: string | null;
             receiptDataHash: string;
             pdfUrl: string | null;
@@ -123,8 +62,10 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
             lastPage: number;
         };
     }>;
-    getReceipt(verificationCode: string, receiptTime: string, userId: string): Promise<any>;
-    getReceiptById(id: string): Promise<{
+    getReceiptById(id: string, requestingUser: {
+        sub: string;
+        role: string;
+    }): Promise<{
         items: {
             id: number;
             createdAt: Date | null;
@@ -133,6 +74,8 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
             quantity: string | null;
             amount: string | null;
         }[];
+        verificationCode: string;
+        receiptTime: string | null;
         id: number;
         createdAt: Date | null;
         userId: string;
@@ -151,50 +94,20 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         receiptNo: string | null;
         zNumber: string | null;
         receiptDate: string | null;
-        receiptTime: string | null;
         totalExclTax: string | null;
         totalTax: string | null;
         totalInclTax: string | null;
-        verificationCode: string;
         verificationCodeUrl: string | null;
         receiptDataHash: string;
         pdfUrl: string | null;
         pdfStatus: string | null;
-    } | null>;
-    generateReceiptPdf(receiptData: any): Promise<Buffer>;
-    getReceiptsByCompanyName(companyName: string): Promise<{
-        items: any;
-        id: number;
-        createdAt: Date | null;
-        userId: string;
-        companyName: string | null;
-        poBox: string | null;
-        mobile: string | null;
-        tin: string | null;
-        vrn: string | null;
-        serialNo: string | null;
-        uin: string | null;
-        taxOffice: string | null;
-        customerName: string | null;
-        customerIdType: string | null;
-        customerId: string | null;
-        customerMobile: string | null;
-        receiptNo: string | null;
-        zNumber: string | null;
-        receiptDate: string | null;
-        receiptTime: string | null;
-        totalExclTax: string | null;
-        totalTax: string | null;
-        totalInclTax: string | null;
-        verificationCode: string;
-        verificationCodeUrl: string | null;
-        receiptDataHash: string;
-        pdfUrl: string | null;
-        pdfStatus: string | null;
-    }[]>;
-    deleteReceipt(receiptId: number, user: {
-        userId: string;
+    }>;
+    deleteReceipt(id: string, requestingUser: {
+        sub: string;
         role: string;
     }): Promise<void>;
+    exportReceiptPdf(id: string, requestingUser: {
+        sub: string;
+        role: string;
+    }): Promise<Buffer>;
 }
-export {};

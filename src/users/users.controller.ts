@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Param, Delete, Patch, Body } from '@nestjs/common';
+import { Controller, Get, UseGuards, Param, Delete, Patch, Body, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from '../auth/enums/role.enum';
@@ -13,14 +13,33 @@ export class UsersController {
 
   @Get()
   @Roles(Role.Admin)
-  async getAllUsersWithReceipts() {
-    return this.usersService.findAllWithReceipts();
+  async findAll() {
+    return this.usersService.findAll();
   }
 
   @Get(':id')
   @Roles(Role.Admin)
-  async getUserWithReceipts(@Param('id') id: string) {
-    return this.usersService.findOneWithReceipts(id);
+  async findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
+  }
+
+  @Get(':userId/receipts')
+  @Roles(Role.Admin)
+  async getReceiptsForUser(
+    @Param('userId') userId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('companyName') companyName?: string,
+    @Query('customerName') customerName?: string,
+    @Query('tin') tin?: string,
+  ) {
+    return this.usersService.findReceiptsForUser(userId, {
+      page: Number(page),
+      limit: Number(limit),
+      companyName,
+      customerName,
+      tin,
+    });
   }
 
   @Delete(':id')

@@ -11,7 +11,8 @@ export class AdminService {
   async getDashboardStats() {
     const [userCountResult] = await this.db.select({ value: count() }).from(users);
     const [receiptCountResult] = await this.db.select({ value: count() }).from(receipts);
-    const [totalTaxResult] = await this.db.select({ value: sum(sql<number>`CAST(${receipts.totalTax} AS numeric)`) }).from(receipts);
+    // Remove commas from totalTax before casting to numeric
+    const [totalTaxResult] = await this.db.select({ value: sum(sql<number>`CAST(REPLACE(${receipts.totalTax}, ',', '') AS numeric)`) }).from(receipts);
 
     const thirtyDaysAgo = subDays(new Date(), 30);
     const [recentReceiptsResult] = await this.db

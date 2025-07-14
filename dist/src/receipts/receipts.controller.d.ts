@@ -1,11 +1,18 @@
 import { ReceiptsService } from './receipts.service';
 import { GetReceiptDto } from './dto/get-receipt.dto';
+import { Response as ExpressResponse } from 'express';
 export declare class ReceiptsController {
     private readonly receiptsService;
+    private readonly logger;
     constructor(receiptsService: ReceiptsService);
-    createReceipt(getReceiptDto: GetReceiptDto, req: any): Promise<any>;
+    createReceipt(getReceiptDto: GetReceiptDto, req: any): Promise<{
+        status: string;
+        receiptId: any;
+    }>;
     getAllReceipts(page?: number, limit?: number, companyName?: string, customerName?: string, tin?: string): Promise<{
         data: {
+            verificationCode: string;
+            receiptTime: string | null;
             id: number;
             createdAt: Date | null;
             userId: string;
@@ -24,11 +31,9 @@ export declare class ReceiptsController {
             receiptNo: string | null;
             zNumber: string | null;
             receiptDate: string | null;
-            receiptTime: string | null;
             totalExclTax: string | null;
             totalTax: string | null;
             totalInclTax: string | null;
-            verificationCode: string;
             verificationCodeUrl: string | null;
             receiptDataHash: string;
             pdfUrl: string | null;
@@ -41,38 +46,10 @@ export declare class ReceiptsController {
             lastPage: number;
         };
     }>;
-    getReceiptsForUser(userId: string): Promise<{
-        items: any;
-        id: number;
-        createdAt: Date | null;
-        userId: string;
-        companyName: string | null;
-        poBox: string | null;
-        mobile: string | null;
-        tin: string | null;
-        vrn: string | null;
-        serialNo: string | null;
-        uin: string | null;
-        taxOffice: string | null;
-        customerName: string | null;
-        customerIdType: string | null;
-        customerId: string | null;
-        customerMobile: string | null;
-        receiptNo: string | null;
-        zNumber: string | null;
-        receiptDate: string | null;
-        receiptTime: string | null;
-        totalExclTax: string | null;
-        totalTax: string | null;
-        totalInclTax: string | null;
-        verificationCode: string;
-        verificationCodeUrl: string | null;
-        receiptDataHash: string;
-        pdfUrl: string | null;
-        pdfStatus: string | null;
-    }[]>;
     findMyReceipts(req: any, page?: number, limit?: number, companyName?: string, customerName?: string, tin?: string): Promise<{
         data: {
+            verificationCode: string;
+            receiptTime: string | null;
             id: number;
             createdAt: Date | null;
             userId: string;
@@ -91,11 +68,9 @@ export declare class ReceiptsController {
             receiptNo: string | null;
             zNumber: string | null;
             receiptDate: string | null;
-            receiptTime: string | null;
             totalExclTax: string | null;
             totalTax: string | null;
             totalInclTax: string | null;
-            verificationCode: string;
             verificationCodeUrl: string | null;
             receiptDataHash: string;
             pdfUrl: string | null;
@@ -117,6 +92,8 @@ export declare class ReceiptsController {
             quantity: string | null;
             amount: string | null;
         }[];
+        verificationCode: string;
+        receiptTime: string | null;
         id: number;
         createdAt: Date | null;
         userId: string;
@@ -135,15 +112,14 @@ export declare class ReceiptsController {
         receiptNo: string | null;
         zNumber: string | null;
         receiptDate: string | null;
-        receiptTime: string | null;
         totalExclTax: string | null;
         totalTax: string | null;
         totalInclTax: string | null;
-        verificationCode: string;
         verificationCodeUrl: string | null;
         receiptDataHash: string;
         pdfUrl: string | null;
         pdfStatus: string | null;
     }>;
     deleteReceipt(id: string, req: any): Promise<void>;
+    downloadPdf(id: string, req: any, res: ExpressResponse): Promise<void>;
 }
