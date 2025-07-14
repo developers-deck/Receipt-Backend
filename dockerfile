@@ -23,7 +23,7 @@ RUN pnpm run build
 # Stage 2: Production
 # This stage creates the final, optimized image. It uses the official
 # Playwright image to ensure all browser dependencies are handled correctly.
-FROM mcr.microsoft.com/playwright:v1.44.0-jammy
+FROM mcr.microsoft.com/playwright:v1.54.1-jammy
 
 WORKDIR /app
 
