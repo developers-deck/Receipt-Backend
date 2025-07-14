@@ -9,10 +9,10 @@ WORKDIR /app
 RUN npm install -g pnpm@10.11.0
 
 # Copy package manager files
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json ./
 
 # Install all dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Copy the rest of the source code
 COPY . .
@@ -33,7 +33,6 @@ RUN npm install -g pnpm@10.11.0
 
 # Copy dependency files and node_modules from the builder stage
 COPY --from=builder /app/package.json ./
-COPY --from=builder /app/pnpm-lock.yaml* ./
 COPY --from=builder /app/node_modules ./node_modules
 
 # Copy the built application from the builder stage
