@@ -38,4 +38,7 @@ coverage/
 *.log
 
 # Drizzle ORM migration artifacts
+# Ignore all migration and SQL files, but keep schema.sql if needed
 drizzle/meta/
+drizzle/*.sql
+!drizzle/schema.sql

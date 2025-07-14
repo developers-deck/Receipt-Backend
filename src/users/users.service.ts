@@ -21,10 +21,13 @@ export class UsersService {
     }
 
     const userReceipts = await this.receiptsService.getReceiptsByUserId(user.id);
-
+    const { passwordHash, ...userWithoutPassword } = user;
     return {
-      ...user,
-      receipts: userReceipts,
+      status: 'success',
+      data: {
+        ...userWithoutPassword,
+        receipts: userReceipts,
+      },
     };
   }
 
@@ -34,13 +37,17 @@ export class UsersService {
     const usersWithReceipts = await Promise.all(
       allUsers.map(async (user) => {
         const userReceipts = await this.receiptsService.getReceiptsByUserId(user.id);
+        const { passwordHash, ...userWithoutPassword } = user;
         return {
-          ...user,
+          ...userWithoutPassword,
           receipts: userReceipts,
         };
       }),
     );
 
-    return usersWithReceipts;
+    return {
+      status: 'success',
+      data: usersWithReceipts,
+    };
   }
 }

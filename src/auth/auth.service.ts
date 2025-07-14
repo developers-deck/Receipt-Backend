@@ -32,7 +32,15 @@ export class AuthService {
   async login(user: any) {
     const payload = { username: user.username, sub: user.id, role: user.role };
     return {
-      access_token: this.jwtService.sign(payload),
+      status: 'success',
+      data: {
+        access_token: this.jwtService.sign(payload),
+        user: {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+        },
+      },
     };
   }
 
@@ -45,6 +53,9 @@ export class AuthService {
       .values({ ...rest, passwordHash: hashedPassword })
       .returning({ id: users.id, username: users.username, role: users.role });
 
-    return newUser[0];
+    return {
+      status: 'success',
+      data: newUser[0],
+    };
   }
 }
