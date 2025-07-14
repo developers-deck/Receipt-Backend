@@ -20,6 +20,9 @@ export class FileUploadService {
       throw new InternalServerErrorException('Backblaze B2 configuration is incomplete. Please check your environment variables.');
     }
 
+    this.bucketName = bucketName;
+    this.region = region;
+
     this.s3Client = new S3Client({
       region,
       endpoint,

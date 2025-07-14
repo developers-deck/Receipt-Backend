@@ -1,57 +1,52 @@
 import { Redis } from '@upstash/redis';
+import { Injectable, Inject } from '@nestjs/common';
+import { REDIS_CLIENT } from '../redis/redis.provider';
 
 export interface PdfJob {
   receiptId: number;
   receiptData: any;
 }
 
+@Injectable()
 export class PdfQueueService {
-  private redis: Redis;
   private readonly queueKey = 'pdf-jobs';
 
-  constructor() {
-    this.redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-    });
-  }
+  constructor(@Inject(REDIS_CLIENT) private redis: Redis) {}
 
   async enqueueJob(job: PdfJob): Promise<void> {
-    await this.redis.rpush(this.queueKey, JSON.stringify(job));
+        const result = await this.redis.rpush(this.queueKey, JSON.stringify(job));
+    console.log(`[PdfQueueService] RPUSH command sent. New queue length: ${result}`);
   }
 
   async dequeueJob(): Promise<PdfJob | null> {
-    const res = await this.redis.lpop(this.queueKey);
-    if (!res || typeof res !== 'string') return null;
-    try {
-      return JSON.parse(res) as PdfJob;
-    } catch (e) {
-      console.error('Failed to parse PdfJob from Redis:', e);
+        const jobData = await this.redis.lpop(this.queueKey);
+
+    if (!jobData) {
       return null;
     }
+
+    console.log(`[PdfQueueService] Dequeued job data:`, jobData);
+
+    // The Upstash client can auto-parse JSON. If it's an object, use it directly.
+    // If it's a string, we need to parse it.
+    if (typeof jobData === 'object') {
+      return jobData as PdfJob;
+    }
+
+    if (typeof jobData === 'string') {
+      try {
+        return JSON.parse(jobData) as PdfJob;
+      } catch (error) {
+        console.error('[PdfQueueService] Failed to parse job string from queue:', error, 'Job data:', jobData);
+        return null;
+      }
+    }
+
+    console.error('[PdfQueueService] Dequeued job is not a string or object, cannot process.', jobData);
+    return null;
   }
 
   async queueLength(): Promise<number> {
     return await this.redis.llen(this.queueKey);
   }
 }
-
-// Simple test for Upstash Redis connection and queue functionality
-if (require.main === module) {
-  (async () => {
-    const queue = new PdfQueueService();
-    const testJob: PdfJob = { receiptId: 123, receiptData: { test: true } };
-    console.log('Enqueuing test job:', testJob);
-    await queue.enqueueJob(testJob);
-    const len = await queue.queueLength();
-    console.log('Queue length after enqueue:', len);
-    const dequeued = await queue.dequeueJob();
-    console.log('Dequeued job:', dequeued);
-    const lenAfter = await queue.queueLength();
-    console.log('Queue length after dequeue:', lenAfter);
-    process.exit(0);
-  })().catch(err => {
-    console.error('Test failed:', err);
-    process.exit(1);
-  });
-} 

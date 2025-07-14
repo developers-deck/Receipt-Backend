@@ -1,4 +1,4 @@
-import { Injectable, Module } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase, drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
@@ -9,15 +9,17 @@ export type DbType = NodePgDatabase<typeof schema>;
 
 export const dbProvider = {
   provide: DB_PROVIDER,
+  inject: [ConfigService],
   useFactory: async (configService: ConfigService) => {
     const dbHost = configService.get<string>('DB_HOST');
     const dbPort = configService.get<number>('DB_PORT');
     const dbUser = configService.get<string>('DB_USER');
     const dbPassword = configService.get<string>('DB_PASSWORD');
     const dbName = configService.get<string>('DB_NAME');
+    const dbTimeout = configService.get<number>('DB_TIMEOUT', 30000);
 
     if (!dbHost || !dbPort || !dbUser || !dbPassword || !dbName) {
-      throw new Error('Database environment variables (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME) are not set');
+      throw new Error('Database environment variables are not set');
     }
 
     console.log('Creating new Pool...');
@@ -27,6 +29,8 @@ export const dbProvider = {
       user: dbUser,
       password: dbPassword,
       database: dbName,
+      idleTimeoutMillis: dbTimeout,
+      connectionTimeoutMillis: dbTimeout,
     });
     console.log('Pool created.');
 
@@ -39,12 +43,11 @@ export const dbProvider = {
     }
 
     console.log('Initializing drizzle...');
-    const db = drizzle(pool, { schema });
+    const db = drizzle(pool, { schema, logger: true });
     console.log('Drizzle initialized.');
 
     return db;
   },
-  inject: [ConfigService],
 };
 
 @Injectable()

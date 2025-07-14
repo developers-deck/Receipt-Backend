@@ -169,56 +169,75 @@ let ReceiptsService = class ReceiptsService {
                 page = await this.browser.newPage();
             }
             const traVerifyUrl = this.configService.get('TRA_VERIFY_URL') || '';
-            const scraped = await this.scraper.scrapeReceipt(page, verificationCode, receiptTime, traVerifyUrl);
-            const newReceipt = {
-                userId,
-                verificationCode,
-                receiptTime,
-                companyName: scraped.companyName,
-                poBox: scraped.poBox,
-                mobile: scraped.mobile,
-                tin: scraped.details['TIN:'] || '',
-                vrn: scraped.details['VRN:'] || '',
-                serialNo: scraped.details['Serial No:'] || '',
-                uin: scraped.details['UIN:'] || '',
-                taxOffice: scraped.details['Tax Office:'] || '',
-                customerName: scraped.details['Customer Name:'] || '',
-                customerIdType: scraped.details['Customer ID Type:'] || '',
-                customerId: scraped.details['Customer ID:'] || '',
-                customerMobile: scraped.details['Customer Mobile:'] || '',
-                receiptNo: scraped.details['Receipt No:'] || '',
-                zNumber: scraped.details['Z-Number:'] || '',
-                receiptDate: scraped.receiptDate,
-                totalExclTax: scraped.totalAmounts.find(t => t.label === 'TOTAL EXCL OF TAX:')?.amount || '0',
-                totalTax: scraped.totalAmounts.find(t => t.label === 'TOTAL TAX:')?.amount || '0',
-                totalInclTax: scraped.totalAmounts.find(t => t.label === 'TOTAL INCL OF TAX:')?.amount || '0',
-                verificationCodeUrl: `${traVerifyUrl}/${verificationCode}`,
-                pdfStatus: 'pending',
-            };
-            const result = await this.db.insert(schema_1.receipts).values(newReceipt).returning();
-            const insertedReceipt = result[0];
-            if (!insertedReceipt) {
-                throw new common_1.InternalServerErrorException('Failed to save receipt to the database.');
-            }
-            if (scraped.items && scraped.items.length > 0) {
-                const purchasedItemsToInsert = scraped.items.map(item => ({
-                    receiptId: insertedReceipt.id,
-                    description: item.description,
-                    quantity: item.qty,
-                    amount: item.amount,
-                }));
-                if (purchasedItemsToInsert.length > 0) {
-                    await this.db.insert(schema_1.purchasedItems).values(purchasedItemsToInsert);
+            try {
+                console.log('[ReceiptsService] Step 1: Scraping receipt data...');
+                const scraped = await this.scraper.scrapeReceipt(page, verificationCode, receiptTime, traVerifyUrl);
+                console.log('[ReceiptsService] Step 2: Scraping successful. Preparing to save to DB.');
+                const newReceipt = {
+                    userId,
+                    verificationCode,
+                    receiptTime,
+                    companyName: scraped.companyName,
+                    poBox: scraped.poBox,
+                    mobile: scraped.mobile,
+                    tin: scraped.details['TIN:'] || '',
+                    vrn: scraped.details['VRN:'] || '',
+                    serialNo: scraped.details['Serial No:'] || '',
+                    uin: scraped.details['UIN:'] || '',
+                    taxOffice: scraped.details['Tax Office:'] || '',
+                    customerName: scraped.details['Customer Name:'] || '',
+                    customerIdType: scraped.details['Customer ID Type:'] || '',
+                    customerId: scraped.details['Customer ID:'] || '',
+                    customerMobile: scraped.details['Customer Mobile:'] || '',
+                    receiptNo: scraped.details['Receipt No:'] || '',
+                    zNumber: scraped.details['Z-Number:'] || '',
+                    receiptDate: scraped.receiptDate,
+                    totalExclTax: scraped.totalAmounts.find(t => t.label === 'TOTAL EXCL OF TAX:')?.amount || '0',
+                    totalTax: scraped.totalAmounts.find(t => t.label === 'TOTAL TAX:')?.amount || '0',
+                    totalInclTax: scraped.totalAmounts.find(t => t.label === 'TOTAL INCL OF TAX:')?.amount || '0',
+                    verificationCodeUrl: `${traVerifyUrl}/${verificationCode}`,
+                    pdfStatus: 'pending',
+                };
+                console.log('[ReceiptsService] Step 3: Inserting main receipt into database...');
+                const result = await this.db.insert(schema_1.receipts).values(newReceipt).returning();
+                const insertedReceipt = result[0];
+                console.log(`[ReceiptsService] Step 4: Main receipt inserted with ID: ${insertedReceipt?.id}`);
+                if (!insertedReceipt) {
+                    throw new common_1.InternalServerErrorException('Failed to save receipt to the database.');
                 }
+                console.log('[ReceiptsService] Step 5: Checking for purchased items to insert...');
+                if (scraped.items && scraped.items.length > 0) {
+                    const purchasedItemsToInsert = scraped.items.map(item => ({
+                        receiptId: insertedReceipt.id,
+                        description: item.description,
+                        quantity: item.qty,
+                        amount: item.amount,
+                    }));
+                    if (purchasedItemsToInsert.length > 0) {
+                        console.log(`[ReceiptsService] Step 6: Inserting ${purchasedItemsToInsert.length} purchased items...`);
+                        await this.db.insert(schema_1.purchasedItems).values(purchasedItemsToInsert);
+                        console.log('[ReceiptsService] Step 7: Purchased items inserted successfully.');
+                    }
+                }
+                console.log('[ReceiptsService] Step 8: Preparing full receipt data for PDF job...');
+                const fullReceiptDataForPdf = {
+                    ...insertedReceipt,
+                    ...scraped.details,
+                    items: scraped.items,
+                    totalAmounts: scraped.totalAmounts,
+                };
+                console.log('[ReceiptsService] Step 9: Enqueuing PDF generation job...');
+                await this.pdfQueue.enqueueJob({ receiptId: insertedReceipt.id, receiptData: fullReceiptDataForPdf });
+                console.log('[ReceiptsService] Step 10: Job enqueued successfully.');
+                return { status: 'queued', receiptId: insertedReceipt.id };
             }
-            const fullReceiptDataForPdf = {
-                ...insertedReceipt,
-                ...scraped.details,
-                items: scraped.items,
-                totalAmounts: scraped.totalAmounts,
-            };
-            await this.pdfQueue.enqueueJob({ receiptId: insertedReceipt.id, receiptData: fullReceiptDataForPdf });
-            return { status: 'queued', receiptId: insertedReceipt.id };
+            catch (error) {
+                console.error(`[ReceiptsService] Failed to process receipt ${verificationCode}:`, error);
+                if (error instanceof common_1.GatewayTimeoutException || error instanceof common_1.ServiceUnavailableException) {
+                    throw error;
+                }
+                throw new common_1.InternalServerErrorException(`Failed to get or save receipt data for ${verificationCode}.`);
+            }
         }
         finally {
             if (page) {

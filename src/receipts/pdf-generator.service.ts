@@ -29,27 +29,46 @@ export class PdfGeneratorService {
           <title>Legal Receipt</title>
           <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:400,700&display=swap" rel="stylesheet">
           <style>
-              body { font-family: 'Helvetica Neue', 'Nunito Sans', Arial, Helvetica, sans-serif; background: #fafbfc; color: #222; }
-              .receipt-container { max-width: 900px; margin: 20px auto; background: #fff; border: 1px solid #eee; padding: 30px 40px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
-              .header, .footer { text-align: center; font-weight: bold; color: #888; margin-bottom: 10px; }
-              .logo { display: block; margin: 0 auto 10px auto; height: 60px; }
-              .divider { border-top: 1px dotted #bbb; margin: 20px 0; }
-              .company-info { text-align: center; font-size: 1.1em; color: #234; margin-bottom: 10px; }
-              .company-info strong { font-size: 1.2em; color: #234; }
-              .details-table, .items-table, .totals-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-              .details-table td { padding: 2px 6px; font-size: 0.98em; }
-              .items-table th, .items-table td { border: 1px solid #e0e0e0; padding: 8px; text-align: left; }
+              body {
+                  width: 210mm; /* A4 width */
+                  height: 297mm; /* A4 height */
+                  margin: 0;
+                  padding: 0;
+                  background-color: #f0f2f5;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-family: 'Helvetica Neue', 'Nunito Sans', Arial, Helvetica, sans-serif;
+                  color: #333;
+                  font-size: 14px; /* Base font size */
+              }
+              .receipt-container {
+                  width: 340px;
+                  background: #fff;
+                  border: 1px solid #e0e0e0;
+                  padding: 20px;
+                  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                  box-sizing: border-box;
+              }
+              .header, .footer { text-align: center; font-weight: bold; color: #888; margin-bottom: 8px; font-size: 0.9em; }
+              .logo { display: block; margin: 0 auto 8px auto; height: 50px; }
+              .divider { border-top: 1px dotted #bbb; margin: 15px 0; }
+              .company-info { text-align: center; font-size: 0.95em; color: #234; margin-bottom: 8px; line-height: 1.4; }
+              .company-info strong { font-size: 1.1em; color: #234; }
+              .details-table, .items-table, .totals-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+              .details-table td { padding: 2px 4px; font-size: 0.9em; }
+              .items-table th, .items-table td { border: 1px solid #e0e0e0; padding: 6px; text-align: left; font-size: 0.95em; }
               .items-table th { background: #f5f5f5; font-weight: bold; }
               .items-table td:last-child, .items-table th:last-child { text-align: right; }
               .items-table td:nth-child(2) { text-align: center; }
-              .totals-table td { padding: 6px; font-size: 1em; border: 1px solid #e0e0e0; text-align: right; }
+              .totals-table td { padding: 5px; font-size: 0.95em; border: 1px solid #e0e0e0; text-align: right; }
               .totals-table td:first-child { text-align: left; font-weight: bold; }
               .totals-table tr:not(:last-child) td { background: #fafbfc; }
               .totals-table tr:last-child td { font-weight: bold; background: #f5f5f5; }
-              .section-title { font-size: 1.1em; font-weight: bold; margin: 18px 0 8px 0; color: #234; }
-              .qr-section { text-align: center; margin: 20px 0 10px 0; }
-              .qr-section img { height: 90px; margin-bottom: 8px; }
-              .verification-code { text-align: center; font-size: 1.1em; font-weight: bold; margin: 10px 0; }
+              .section-title { font-size: 1em; font-weight: bold; margin: 15px 0 8px 0; color: #234; }
+              .qr-section { text-align: center; margin: 15px 0 5px 0; }
+              .qr-section img { height: 80px; margin-bottom: 5px; }
+              .verification-code { text-align: center; font-size: 1em; font-weight: bold; margin: 8px 0; }
           </style>
       </head>
       <body>

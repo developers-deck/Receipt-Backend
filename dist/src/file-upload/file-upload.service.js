@@ -29,6 +29,8 @@ let FileUploadService = class FileUploadService {
         if (!region || !endpoint || !accessKeyId || !secretAccessKey || !bucketName) {
             throw new common_1.InternalServerErrorException('Backblaze B2 configuration is incomplete. Please check your environment variables.');
         }
+        this.bucketName = bucketName;
+        this.region = region;
         this.s3Client = new client_s3_1.S3Client({
             region,
             endpoint,

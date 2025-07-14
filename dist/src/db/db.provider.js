@@ -15,14 +15,16 @@ const schema = require("./schema");
 exports.DB_PROVIDER = 'DB_PROVIDER';
 exports.dbProvider = {
     provide: exports.DB_PROVIDER,
+    inject: [config_1.ConfigService],
     useFactory: async (configService) => {
         const dbHost = configService.get('DB_HOST');
         const dbPort = configService.get('DB_PORT');
         const dbUser = configService.get('DB_USER');
         const dbPassword = configService.get('DB_PASSWORD');
         const dbName = configService.get('DB_NAME');
+        const dbTimeout = configService.get('DB_TIMEOUT', 30000);
         if (!dbHost || !dbPort || !dbUser || !dbPassword || !dbName) {
-            throw new Error('Database environment variables (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME) are not set');
+            throw new Error('Database environment variables are not set');
         }
         console.log('Creating new Pool...');
         const pool = new pg_1.Pool({
@@ -31,6 +33,8 @@ exports.dbProvider = {
             user: dbUser,
             password: dbPassword,
             database: dbName,
+            idleTimeoutMillis: dbTimeout,
+            connectionTimeoutMillis: dbTimeout,
         });
         console.log('Pool created.');
         try {
@@ -42,11 +46,10 @@ exports.dbProvider = {
             throw error;
         }
         console.log('Initializing drizzle...');
-        const db = (0, node_postgres_1.drizzle)(pool, { schema });
+        const db = (0, node_postgres_1.drizzle)(pool, { schema, logger: true });
         console.log('Drizzle initialized.');
         return db;
     },
-    inject: [config_1.ConfigService],
 };
 let DbService = class DbService {
 };
