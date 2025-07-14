@@ -44,16 +44,18 @@ let ReceiptsService = class ReceiptsService {
     db;
     configService;
     fileUploadService;
+    pdfGenerator;
+    scraper;
+    pdfQueue;
     browser = null;
-    page = null;
     browserInitLock = new async_mutex_1.Mutex();
-    pdfGenerator = new pdf_generator_service_1.PdfGeneratorService();
-    scraper = new scraper_service_1.ScraperService();
-    pdfQueue = new pdf_queue_service_1.PdfQueueService();
-    constructor(db, configService, fileUploadService) {
+    constructor(db, configService, fileUploadService, pdfGenerator, scraper, pdfQueue) {
         this.db = db;
         this.configService = configService;
         this.fileUploadService = fileUploadService;
+        this.pdfGenerator = pdfGenerator;
+        this.scraper = scraper;
+        this.pdfQueue = pdfQueue;
     }
     async onModuleInit() {
         await this.initializeBrowser();
@@ -65,7 +67,6 @@ let ReceiptsService = class ReceiptsService {
                     console.log('Closing existing Playwright browser instance.');
                     await safeCloseBrowser(this.browser);
                     this.browser = null;
-                    this.page = null;
                 }
                 console.log('Attempting to launch Playwright browser...');
                 this.browser = await playwright_1.chromium.launch({
@@ -86,15 +87,10 @@ let ReceiptsService = class ReceiptsService {
                     ignoreDefaultArgs: ['--disable-extensions'],
                     chromiumSandbox: false
                 });
-                console.log('Playwright browser launched. Creating new page...');
-                this.page = await this.browser.newPage();
-                await this.page.setViewportSize({ width: 1280, height: 800 });
-                console.log('Playwright browser and page initialized successfully.');
+                console.log('Playwright browser launched successfully.');
             }
             catch (error) {
                 console.error('Failed to initialize Playwright:', error);
-                await safeClosePage(this.page);
-                this.page = null;
                 await safeCloseBrowser(this.browser);
                 this.browser = null;
                 throw error;
@@ -126,6 +122,9 @@ let ReceiptsService = class ReceiptsService {
     }
     async getAllReceipts() {
         const allReceipts = await this.db.select().from(schema_1.receipts);
+        if (!allReceipts || allReceipts.length === 0) {
+            return [];
+        }
         const receiptIds = allReceipts.map(r => r.id);
         const allItems = receiptIds.length > 0
             ? await this.db.select().from(schema_1.purchasedItems).where((0, drizzle_orm_1.inArray)(schema_1.purchasedItems.receiptId, receiptIds))
@@ -142,57 +141,60 @@ let ReceiptsService = class ReceiptsService {
         }));
     }
     async getReceipt(verificationCode, receiptTime, userId) {
-        const traVerifyUrl = this.configService.get('TRA_VERIFY_URL') || '';
-        let scraped;
+        if (!this.browser) {
+            throw new common_1.ServiceUnavailableException('Browser is not initialized.');
+        }
+        const page = await this.browser.newPage();
         try {
-            scraped = await this.scraper.scrapeReceipt(verificationCode, receiptTime, traVerifyUrl);
+            const traVerifyUrl = this.configService.get('TRA_VERIFY_URL') || '';
+            const scraped = await this.scraper.scrapeReceipt(page, verificationCode, receiptTime, traVerifyUrl);
+            const newReceipt = {
+                userId,
+                verificationCode,
+                receiptTime,
+                companyName: scraped.companyName,
+                poBox: scraped.poBox,
+                mobile: scraped.mobile,
+                tin: scraped.details['TIN:'] || '',
+                vrn: scraped.details['VRN:'] || '',
+                serialNo: scraped.details['Serial No:'] || '',
+                uin: scraped.details['UIN:'] || '',
+                taxOffice: scraped.details['Tax Office:'] || '',
+                customerName: scraped.details['Customer Name:'] || '',
+                customerIdType: scraped.details['Customer ID Type:'] || '',
+                customerId: scraped.details['Customer ID:'] || '',
+                customerMobile: scraped.details['Customer Mobile:'] || '',
+                receiptNo: scraped.details['Receipt No:'] || '',
+                zNumber: scraped.details['Z-Number:'] || '',
+                receiptDate: scraped.receiptDate,
+                totalExclTax: scraped.totalAmounts.find(t => t.label === 'TOTAL EXCL OF TAX:')?.amount || '0',
+                totalTax: scraped.totalAmounts.find(t => t.label === 'TOTAL TAX:')?.amount || '0',
+                totalInclTax: scraped.totalAmounts.find(t => t.label === 'TOTAL INCL OF TAX:')?.amount || '0',
+                verificationCodeUrl: `${traVerifyUrl}/${verificationCode}`,
+                pdfStatus: 'pending',
+            };
+            const result = await this.db.insert(schema_1.receipts).values(newReceipt).returning();
+            const insertedReceipt = result[0];
+            if (!insertedReceipt) {
+                throw new common_1.InternalServerErrorException('Failed to save receipt to the database.');
+            }
+            if (scraped.items && scraped.items.length > 0) {
+                const purchasedItemsToInsert = scraped.items.map(item => ({
+                    receiptId: insertedReceipt.id,
+                    description: item.description,
+                    quantity: item.qty,
+                    amount: item.amount,
+                }));
+                if (purchasedItemsToInsert.length > 0) {
+                    await this.db.insert(schema_1.purchasedItems).values(purchasedItemsToInsert);
+                }
+            }
+            await this.pdfQueue.enqueueJob({ receiptId: insertedReceipt.id, receiptData: { ...insertedReceipt, items: scraped.items } });
+            return { status: 'queued', receiptId: insertedReceipt.id };
         }
         finally {
-            await this.scraper.close();
+            await safeClosePage(page);
         }
-        const newReceipt = {
-            userId,
-            verificationCode,
-            receiptTime,
-            companyName: scraped.companyName,
-            poBox: scraped.poBox,
-            mobile: scraped.mobile,
-            tin: scraped.details['TIN:'] || '',
-            vrn: scraped.details['VRN:'] || '',
-            serialNo: scraped.details['Serial No:'] || '',
-            uin: scraped.details['UIN:'] || '',
-            taxOffice: scraped.details['Tax Office:'] || '',
-            customerName: scraped.details['Customer Name:'] || '',
-            customerIdType: scraped.details['Customer ID Type:'] || '',
-            customerId: scraped.details['Customer ID:'] || '',
-            customerMobile: scraped.details['Customer Mobile:'] || '',
-            receiptNo: scraped.details['Receipt No:'] || '',
-            zNumber: scraped.details['Z-Number:'] || '',
-            receiptDate: scraped.receiptDate,
-            totalExclTax: scraped.totalAmounts.find(t => t.label === 'TOTAL EXCL OF TAX:')?.amount || '0',
-            totalTax: scraped.totalAmounts.find(t => t.label === 'TOTAL TAX:')?.amount || '0',
-            totalInclTax: scraped.totalAmounts.find(t => t.label === 'TOTAL INCL OF TAX:')?.amount || '0',
-            verificationCodeUrl: `${traVerifyUrl}/${verificationCode}`,
-            pdfStatus: 'pending',
-        };
-        const result = await this.db.insert(schema_1.receipts).values(newReceipt).returning();
-        const insertedReceipt = result[0];
-        if (!insertedReceipt) {
-            throw new common_1.InternalServerErrorException('Failed to save receipt to the database.');
-        }
-        if (scraped.items && scraped.items.length > 0) {
-            const purchasedItemsToInsert = scraped.items.map(item => ({
-                receiptId: insertedReceipt.id,
-                description: item.description,
-                quantity: item.qty,
-                amount: item.amount,
-            }));
-            if (purchasedItemsToInsert.length > 0) {
-                await this.db.insert(schema_1.purchasedItems).values(purchasedItemsToInsert);
-            }
-        }
-        await this.pdfQueue.enqueueJob({ receiptId: insertedReceipt.id, receiptData: { ...insertedReceipt, items: scraped.items } });
-        return { status: 'queued', receiptId: insertedReceipt.id };
     }
     async getReceiptById(id) {
         const receiptId = parseInt(id, 10);
@@ -207,15 +209,18 @@ let ReceiptsService = class ReceiptsService {
         return { ...receipt[0], items: purchasedItemsForReceipt };
     }
     async generateReceiptPdf(receiptData) {
-        const htmlContent = await this.pdfGenerator.generateReceiptPdf(receiptData).catch((err) => {
-            throw new common_1.InternalServerErrorException('Failed to generate receipt HTML: ' + err.message);
-        });
-        if (!this.page) {
-            throw new common_1.ServiceUnavailableException('Browser page is not available for PDF generation.');
+        if (!this.browser) {
+            throw new common_1.ServiceUnavailableException('Browser is not initialized for PDF generation.');
         }
-        await this.page.setContent(htmlContent, { waitUntil: 'networkidle' });
-        const pdfBuffer = await this.page.pdf({ format: 'A4', printBackground: true });
-        return pdfBuffer;
+        const page = await this.browser.newPage();
+        try {
+            const htmlContent = await this.pdfGenerator.generateReceiptPdf(receiptData);
+            await page.setContent(htmlContent, { waitUntil: 'networkidle' });
+            return await page.pdf({ format: 'A4', printBackground: true });
+        }
+        finally {
+            await safeClosePage(page);
+        }
     }
     async getReceiptsByCompanyName(companyName) {
         const matchingReceipts = await this.db.select().from(schema_1.receipts).where((0, drizzle_orm_1.eq)(schema_1.receipts.companyName, companyName));
@@ -243,6 +248,9 @@ exports.ReceiptsService = ReceiptsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)(db_provider_1.DB_PROVIDER)),
     __metadata("design:paramtypes", [Object, config_1.ConfigService,
-        file_upload_service_1.FileUploadService])
+        file_upload_service_1.FileUploadService,
+        pdf_generator_service_1.PdfGeneratorService,
+        scraper_service_1.ScraperService,
+        pdf_queue_service_1.PdfQueueService])
 ], ReceiptsService);
 //# sourceMappingURL=receipts.service.js.map

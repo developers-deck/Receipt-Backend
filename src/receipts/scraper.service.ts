@@ -11,27 +11,9 @@ export interface ScrapedReceiptData {
 }
 
 export class ScraperService {
-  private browser: Browser | null = null;
-  private page: Page | null = null;
-
-  async init() {
-    if (!this.browser) {
-      this.browser = await chromium.launch({ headless: true });
-      this.page = await this.browser.newPage();
-    }
-  }
-
-  async close() {
-    if (this.page) await this.page.close();
-    if (this.browser) await this.browser.close();
-    this.page = null;
-    this.browser = null;
-  }
-
-  async scrapeReceipt(verificationCode: string, receiptTime: string, traVerifyUrl: string): Promise<ScrapedReceiptData> {
-    await this.init();
-    const page = this.page!;
+  async scrapeReceipt(page: Page, verificationCode: string, receiptTime: string, traVerifyUrl: string): Promise<ScrapedReceiptData> {
     await page.goto(`${traVerifyUrl}/${verificationCode}`, { timeout: 60000, waitUntil: 'domcontentloaded' });
+
     const hourSelect = await page.$('#HH');
     if (hourSelect) {
       const [hour, minute] = receiptTime.split(':');
@@ -45,13 +27,16 @@ export class ScraperService {
       await page.click(submitButtonSelector, { timeout: 60000 });
       await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 });
     }
+
     const receiptContainer = await page.$('.receipt-container');
     if (!receiptContainer) {
       throw new Error('A receipt with the provided details could not be found.');
     }
+
     const companyName = await receiptContainer.$eval('.card-header h3', el => el.textContent?.trim() || '');
     const poBox = await receiptContainer.$eval('.card-header p:nth-of-type(1)', el => el.textContent?.trim() || '');
     const mobile = await receiptContainer.$eval('.card-header p:nth-of-type(2)', el => el.textContent?.trim() || '');
+
     const details = await receiptContainer.$$eval('.card-body .row .col-md-6', (cols) => {
       const data: Record<string, string> = {};
       cols.forEach(col => {
@@ -63,6 +48,7 @@ export class ScraperService {
       });
       return data;
     });
+
     const items = await receiptContainer.$$eval('table.table-condensed tbody tr', rows =>
       rows.map(row => {
         const cols = row.querySelectorAll('td');
@@ -73,6 +59,7 @@ export class ScraperService {
         };
       }),
     );
+
     const totalAmounts = await receiptContainer.$$eval('table.table.mt-5 tbody tr', rows =>
       rows.map(row => {
         const label = (row.querySelector('td:first-child')?.textContent || '').trim();
@@ -80,8 +67,10 @@ export class ScraperService {
         return { label, amount };
       }),
     );
+
     const receiptDateTime = details['Date & Time:'] || '';
     const [receiptDate] = receiptDateTime.split(' ');
+
     return { companyName, poBox, mobile, details, items, totalAmounts, receiptDate };
   }
-} 
+}

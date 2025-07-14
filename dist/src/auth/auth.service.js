@@ -39,7 +39,15 @@ let AuthService = class AuthService {
     async login(user) {
         const payload = { username: user.username, sub: user.id, role: user.role };
         return {
-            access_token: this.jwtService.sign(payload),
+            status: 'success',
+            data: {
+                access_token: this.jwtService.sign(payload),
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    role: user.role,
+                },
+            },
         };
     }
     async createUser(createUserDto) {
@@ -49,7 +57,10 @@ let AuthService = class AuthService {
             .insert(schema_1.users)
             .values({ ...rest, passwordHash: hashedPassword })
             .returning({ id: schema_1.users.id, username: schema_1.users.username, role: schema_1.users.role });
-        return newUser[0];
+        return {
+            status: 'success',
+            data: newUser[0],
+        };
     }
 };
 exports.AuthService = AuthService;

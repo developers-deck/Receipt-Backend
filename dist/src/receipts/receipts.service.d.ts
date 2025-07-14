@@ -1,6 +1,9 @@
 import { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FileUploadService } from '../file-upload/file-upload.service';
+import { PdfGeneratorService } from './pdf-generator.service';
+import { ScraperService } from './scraper.service';
+import { PdfQueueService } from './pdf-queue.service';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '../db/schema';
 type DbType = ReturnType<typeof drizzle<typeof schema>>;
@@ -8,13 +11,12 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
     private db;
     private configService;
     private fileUploadService;
+    private readonly pdfGenerator;
+    private readonly scraper;
+    private readonly pdfQueue;
     private browser;
-    private page;
     private browserInitLock;
-    private pdfGenerator;
-    private scraper;
-    private pdfQueue;
-    constructor(db: DbType, configService: ConfigService, fileUploadService: FileUploadService);
+    constructor(db: DbType, configService: ConfigService, fileUploadService: FileUploadService, pdfGenerator: PdfGeneratorService, scraper: ScraperService, pdfQueue: PdfQueueService);
     onModuleInit(): Promise<void>;
     private initializeBrowser;
     onModuleDestroy(): Promise<void>;
@@ -113,7 +115,7 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         pdfUrl: string | null;
         pdfStatus: string | null;
     } | null>;
-    private generateReceiptPdf;
+    generateReceiptPdf(receiptData: any): Promise<Buffer>;
     getReceiptsByCompanyName(companyName: string): Promise<{
         items: any;
         id: number;

@@ -9,7 +9,15 @@ export declare class AuthService {
     constructor(db: DbType, jwtService: JwtService);
     validateUser(username: string, pass: string): Promise<any>;
     login(user: any): Promise<{
-        access_token: string;
+        status: string;
+        data: {
+            access_token: string;
+            user: {
+                id: any;
+                username: any;
+                role: any;
+            };
+        };
     }>;
     createUser(createUserDto: NewUser): Promise<any>;
 }

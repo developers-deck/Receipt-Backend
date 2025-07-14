@@ -24,9 +24,7 @@ exports.AuthModule = AuthModule = __decorate([
         imports: [
             db_module_1.DbModule,
             passport_1.PassportModule,
-            config_1.ConfigModule,
             jwt_1.JwtModule.registerAsync({
-                imports: [config_1.ConfigModule],
                 useFactory: async (configService) => {
                     const jwtSecret = configService.get('JWT_SECRET');
                     if (!jwtSecret) {
