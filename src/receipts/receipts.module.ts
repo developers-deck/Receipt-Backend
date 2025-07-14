@@ -3,11 +3,19 @@ import { ReceiptsService } from './receipts.service';
 import { ReceiptsController } from './receipts.controller';
 import { DbModule } from '../db/db.module';
 import { FileUploadModule } from '../file-upload/file-upload.module';
+import { PdfGeneratorService } from './pdf-generator.service';
+import { ScraperService } from './scraper.service';
+import { PdfQueueService } from './pdf-queue.service';
 
 @Module({
   imports: [DbModule, FileUploadModule],
   controllers: [ReceiptsController],
-  providers: [ReceiptsService],
+  providers: [
+    ReceiptsService,
+    PdfGeneratorService,
+    ScraperService,
+    PdfQueueService,
+  ],
   exports: [ReceiptsService],
 })
 export class ReceiptsModule {}

@@ -39,15 +39,15 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
   private browser: Browser | null = null;
   private page: Page | null = null;
   private browserInitLock = new Mutex();
-  private pdfGenerator = new PdfGeneratorService();
-  private scraper = new ScraperService();
-  private pdfQueue = new PdfQueueService();
 
   constructor(
     @Inject(DB_PROVIDER) private db: DbType,
     private configService: ConfigService,
     private fileUploadService: FileUploadService,
-  ) {} // Inject FileUploadService
+    private readonly pdfGenerator: PdfGeneratorService,
+    private readonly scraper: ScraperService,
+    private readonly pdfQueue: PdfQueueService,
+  ) {}
 
   async onModuleInit() {
     await this.initializeBrowser();
@@ -211,7 +211,7 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
 
   private async generateReceiptPdf(receiptData: any): Promise<Buffer> {
     // Use PdfGeneratorService to get HTML with embedded QR code
-    const htmlContent = await this.pdfGenerator.generateReceiptPdf(receiptData).catch((err) => {
+            const htmlContent = await this.pdfGenerator.generateReceiptPdf(receiptData).catch((err) => {
       throw new InternalServerErrorException('Failed to generate receipt HTML: ' + err.message);
     });
     if (!this.page) {
