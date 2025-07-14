@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ReceiptsModule } from './receipts/receipts.module';
+import { ReceiptsModule } from '@/receipts/receipts.module';
 import { ConfigModule } from '@nestjs/config';
-import { DbModule } from './db/db.module';
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
+import { DbModule } from '@/db/db.module';
+import { AuthModule } from '@/auth/auth.module';
+import { UsersModule } from '@/users/users.module';
+import { AdminModule } from '@/admin/admin.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { UsersModule } from './users/users.module';
     DbModule,
     AuthModule,
     UsersModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

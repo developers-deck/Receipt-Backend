@@ -141,6 +141,43 @@ let ReceiptsService = class ReceiptsService {
             items: itemsByReceipt.get(receipt.id) || []
         }));
     }
+    async findAll(user, options) {
+        const { page, limit, companyName, customerName, tin } = options;
+        const offset = (page - 1) * limit;
+        const whereClauses = [];
+        if (user) {
+            whereClauses.push((0, drizzle_orm_1.eq)(schema_1.receipts.userId, user.id));
+        }
+        if (companyName) {
+            whereClauses.push((0, drizzle_orm_1.ilike)(schema_1.receipts.companyName, `%${companyName}%`));
+        }
+        if (customerName) {
+            whereClauses.push((0, drizzle_orm_1.ilike)(schema_1.receipts.customerName, `%${customerName}%`));
+        }
+        if (tin) {
+            whereClauses.push((0, drizzle_orm_1.eq)(schema_1.receipts.tin, tin));
+        }
+        const query = this.db.query.receipts.findMany({
+            where: (0, drizzle_orm_1.and)(...whereClauses),
+            limit: limit,
+            offset: offset,
+            orderBy: (receipts, { desc }) => [desc(receipts.createdAt)],
+        });
+        const totalReceipts = await this.db
+            .select({ count: (0, drizzle_orm_1.sql) `count(*)` })
+            .from(schema_1.receipts)
+            .where((0, drizzle_orm_1.and)(...whereClauses));
+        const data = await query;
+        return {
+            data,
+            meta: {
+                total: totalReceipts[0].count,
+                page,
+                limit,
+                lastPage: Math.ceil(totalReceipts[0].count / limit),
+            },
+        };
+    }
     async getReceipt(verificationCode, receiptTime, userId) {
         if (!this.browser || !this.browser.isConnected()) {
             console.log('Browser is not connected. Re-initializing...');

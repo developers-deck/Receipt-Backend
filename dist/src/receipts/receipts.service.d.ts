@@ -80,6 +80,49 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         pdfUrl: string | null;
         pdfStatus: string | null;
     }[]>;
+    findAll(user: schema.User | null, options: {
+        page: number;
+        limit: number;
+        companyName?: string;
+        customerName?: string;
+        tin?: string;
+    }): Promise<{
+        data: {
+            id: number;
+            createdAt: Date | null;
+            userId: string;
+            companyName: string | null;
+            poBox: string | null;
+            mobile: string | null;
+            tin: string | null;
+            vrn: string | null;
+            serialNo: string | null;
+            uin: string | null;
+            taxOffice: string | null;
+            customerName: string | null;
+            customerIdType: string | null;
+            customerId: string | null;
+            customerMobile: string | null;
+            receiptNo: string | null;
+            zNumber: string | null;
+            receiptDate: string | null;
+            receiptTime: string | null;
+            totalExclTax: string | null;
+            totalTax: string | null;
+            totalInclTax: string | null;
+            verificationCode: string;
+            verificationCodeUrl: string | null;
+            receiptDataHash: string;
+            pdfUrl: string | null;
+            pdfStatus: string | null;
+        }[];
+        meta: {
+            total: number;
+            page: number;
+            limit: number;
+            lastPage: number;
+        };
+    }>;
     getReceipt(verificationCode: string, receiptTime: string, userId: string): Promise<any>;
     getReceiptById(id: string): Promise<{
         items: {

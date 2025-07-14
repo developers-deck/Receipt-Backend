@@ -30,15 +30,27 @@ let ReceiptsController = class ReceiptsController {
         const userId = req.user.userId;
         return this.receiptsService.getReceipt(verificationCode, receiptTime, userId);
     }
-    async getAllReceipts() {
-        return this.receiptsService.getAllReceipts();
+    async getAllReceipts(page = 1, limit = 10, companyName, customerName, tin) {
+        return this.receiptsService.findAll(null, {
+            page: +page,
+            limit: +limit,
+            companyName,
+            customerName,
+            tin,
+        });
     }
     async getReceiptsForUser(userId) {
         return this.receiptsService.getReceiptsByUserId(userId);
     }
-    async getMyReceipts(req) {
-        const userId = req.user.userId;
-        return this.receiptsService.getReceiptsByUserId(userId);
+    async findMyReceipts(req, page = 1, limit = 10, companyName, customerName, tin) {
+        const user = req.user;
+        return this.receiptsService.findAll(user, {
+            page: +page,
+            limit: +limit,
+            companyName,
+            customerName,
+            tin,
+        });
     }
     async getReceiptById(id, req) {
         const receiptId = id;
@@ -73,8 +85,13 @@ __decorate([
 __decorate([
     (0, common_1.Get)(),
     (0, roles_decorator_1.Roles)(role_enum_1.Role.Admin),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('companyName')),
+    __param(3, (0, common_1.Query)('customerName')),
+    __param(4, (0, common_1.Query)('tin')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object, Object, String, String, String]),
     __metadata("design:returntype", Promise)
 ], ReceiptsController.prototype, "getAllReceipts", null);
 __decorate([
@@ -89,10 +106,15 @@ __decorate([
     (0, common_1.Get)('mine'),
     (0, roles_decorator_1.Roles)(role_enum_1.Role.User, role_enum_1.Role.Admin),
     __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('companyName')),
+    __param(4, (0, common_1.Query)('customerName')),
+    __param(5, (0, common_1.Query)('tin')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object, Object, String, String, String]),
     __metadata("design:returntype", Promise)
-], ReceiptsController.prototype, "getMyReceipts", null);
+], ReceiptsController.prototype, "findMyReceipts", null);
 __decorate([
     (0, common_1.Get)(':id'),
     (0, roles_decorator_1.Roles)(role_enum_1.Role.Admin, role_enum_1.Role.User),
