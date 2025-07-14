@@ -6,4 +6,5 @@ export declare class FileUploadService {
     private readonly region;
     constructor(configService: ConfigService);
     upload(fileBuffer: Buffer, mimeType: string): Promise<string>;
+    deleteFile(fileUrl: string): Promise<void>;
 }

@@ -59,6 +59,28 @@ let FileUploadService = class FileUploadService {
             throw new common_1.InternalServerErrorException('Failed to upload PDF file.');
         }
     }
+    async deleteFile(fileUrl) {
+        if (!fileUrl) {
+            console.log('No file URL provided, skipping deletion.');
+            return;
+        }
+        try {
+            const key = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+            if (!key) {
+                console.warn(`Could not extract key from URL: ${fileUrl}`);
+                return;
+            }
+            const command = new client_s3_1.DeleteObjectCommand({
+                Bucket: this.bucketName,
+                Key: key,
+            });
+            await this.s3Client.send(command);
+            console.log(`Successfully deleted file ${key} from bucket ${this.bucketName}`);
+        }
+        catch (error) {
+            console.error(`Failed to delete file from Backblaze B2 for URL: ${fileUrl}`, error);
+        }
+    }
 };
 exports.FileUploadService = FileUploadService;
 exports.FileUploadService = FileUploadService = __decorate([

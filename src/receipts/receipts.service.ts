@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Inject, InternalServerErrorException, ServiceUnavailableException, NotFoundException, GatewayTimeoutException } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Inject, InternalServerErrorException, ServiceUnavailableException, NotFoundException, GatewayTimeoutException, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { chromium, Browser, Page } from 'playwright';
 import { DB_PROVIDER } from '../db/db.provider';
 import { receipts, NewReceipt, purchasedItems, Receipt } from '../db/schema';
@@ -11,6 +11,7 @@ import { PdfGeneratorService } from './pdf-generator.service';
 import { ScraperService, ScrapedReceiptData } from './scraper.service';
 import { PdfQueueService } from './pdf-queue.service';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import * as crypto from 'crypto';
 import * as schema from '../db/schema';
 
 // Define the database type
@@ -173,10 +174,16 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         const scraped = await this.scraper.scrapeReceipt(page, verificationCode, receiptTime, traVerifyUrl);
         console.log('[ReceiptsService] Step 2: Scraping successful. Preparing to save to DB.');
 
+        const receiptDataString = JSON.stringify({
+          details: scraped.details,
+          items: scraped.items,
+          totals: scraped.totalAmounts,
+        });
+        const receiptDataHash = crypto.createHash('sha256').update(receiptDataString).digest('hex');
+
         const newReceipt: NewReceipt = {
           userId,
-          verificationCode,
-          receiptTime,
+          receiptDataHash,
           companyName: scraped.companyName,
           poBox: scraped.poBox,
           mobile: scraped.mobile,
@@ -195,13 +202,23 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
           totalExclTax: scraped.totalAmounts.find(t => t.label === 'TOTAL EXCL OF TAX:')?.amount || '0',
           totalTax: scraped.totalAmounts.find(t => t.label === 'TOTAL TAX:')?.amount || '0',
           totalInclTax: scraped.totalAmounts.find(t => t.label === 'TOTAL INCL OF TAX:')?.amount || '0',
+          verificationCode: verificationCode,
           verificationCodeUrl: `${traVerifyUrl}/${verificationCode}`,
           pdfStatus: 'pending',
         };
 
         console.log('[ReceiptsService] Step 3: Inserting main receipt into database...');
-        const result = await this.db.insert(receipts).values(newReceipt).returning();
-        const insertedReceipt = result[0];
+        let insertedReceipt;
+        try {
+          [insertedReceipt] = await this.db.insert(receipts).values(newReceipt).returning();
+        } catch (error) {
+          // Check for unique constraint violation (PostgreSQL error code for unique_violation is 23505)
+          if (error.code === '23505') {
+            throw new ConflictException('This receipt has already been saved to your account.');
+          }
+          // Re-throw other errors
+          throw error;
+        }
         console.log(`[ReceiptsService] Step 4: Main receipt inserted with ID: ${insertedReceipt?.id}`);
 
         if (!insertedReceipt) {
@@ -295,5 +312,29 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
       ...receipt,
       items: itemsByReceipt.get(receipt.id) || []
     }));
+  }
+
+  async deleteReceipt(receiptId: number, user: { userId: string; role: string }) {
+    console.log(`[ReceiptsService] Attempting to delete receipt with ID: ${receiptId}`);
+    const [receiptToDelete] = await this.db.select().from(receipts).where(eq(receipts.id, receiptId));
+
+    if (!receiptToDelete) {
+      throw new NotFoundException(`Receipt with ID ${receiptId} not found.`);
+    }
+
+    // Authorization check: User must be an admin or the owner of the receipt.
+    if (user.role !== 'admin' && receiptToDelete.userId !== user.userId) {
+      throw new UnauthorizedException('You are not authorized to delete this receipt.');
+    }
+
+    // If a PDF exists, delete it from Backblaze B2.
+    if (receiptToDelete.pdfUrl) {
+      console.log(`[ReceiptsService] Deleting associated PDF file: ${receiptToDelete.pdfUrl}`);
+      await this.fileUploadService.deleteFile(receiptToDelete.pdfUrl);
+    }
+
+    // Delete the receipt from the database.
+    await this.db.delete(receipts).where(eq(receipts.id, receiptId));
+    console.log(`[ReceiptsService] Successfully deleted receipt with ID: ${receiptId}`);
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
@@ -52,6 +52,33 @@ export class FileUploadService {
     } catch (error) {
       console.error('Error uploading file to Backblaze B2:', error);
       throw new InternalServerErrorException('Failed to upload PDF file.');
+    }
+  }
+
+  async deleteFile(fileUrl: string): Promise<void> {
+    if (!fileUrl) {
+      console.log('No file URL provided, skipping deletion.');
+      return;
+    }
+
+    try {
+      const key = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+
+      if (!key) {
+        console.warn(`Could not extract key from URL: ${fileUrl}`);
+        return;
+      }
+
+      const command = new DeleteObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      await this.s3Client.send(command);
+      console.log(`Successfully deleted file ${key} from bucket ${this.bucketName}`);
+    } catch (error) {
+      console.error(`Failed to delete file from Backblaze B2 for URL: ${fileUrl}`, error);
+      // Do not re-throw, as failing to delete the file should not prevent DB record deletion.
     }
   }
 }

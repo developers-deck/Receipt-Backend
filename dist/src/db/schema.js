@@ -31,11 +31,16 @@ exports.receipts = (0, pg_core_1.pgTable)('receipts', {
     totalExclTax: (0, pg_core_1.text)('total_excl_tax'),
     totalTax: (0, pg_core_1.text)('total_tax'),
     totalInclTax: (0, pg_core_1.text)('total_incl_tax'),
-    verificationCode: (0, pg_core_1.text)('verification_code').notNull().unique(),
+    verificationCode: (0, pg_core_1.text)('verification_code').notNull(),
     verificationCodeUrl: (0, pg_core_1.text)('verification_code_url'),
+    receiptDataHash: (0, pg_core_1.text)('receipt_data_hash').notNull(),
     pdfUrl: (0, pg_core_1.text)('pdf_url'),
     pdfStatus: (0, pg_core_1.text)('pdf_status').default('pending'),
     createdAt: (0, pg_core_1.timestamp)('created_at').defaultNow(),
+}, (table) => {
+    return {
+        userReceiptUnique: (0, pg_core_1.uniqueIndex)('user_receipt_unique_idx').on(table.userId, table.receiptDataHash),
+    };
 });
 exports.purchasedItems = (0, pg_core_1.pgTable)('purchased_items', {
     id: (0, pg_core_1.serial)('id').primaryKey(),

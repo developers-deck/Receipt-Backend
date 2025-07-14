@@ -345,6 +345,18 @@ export declare const receipts: import("drizzle-orm/pg-core").PgTableWithColumns<
             enumValues: [string, ...string[]];
             baseColumn: never;
         }, {}, {}>;
+        receiptDataHash: import("drizzle-orm/pg-core").PgColumn<{
+            name: "receipt_data_hash";
+            tableName: "receipts";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
         pdfUrl: import("drizzle-orm/pg-core").PgColumn<{
             name: "pdf_url";
             tableName: "receipts";

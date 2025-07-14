@@ -30,6 +30,7 @@ export declare class ReceiptsController {
         totalInclTax: string | null;
         verificationCode: string;
         verificationCodeUrl: string | null;
+        receiptDataHash: string;
         pdfUrl: string | null;
         pdfStatus: string | null;
     }[]>;
@@ -59,6 +60,7 @@ export declare class ReceiptsController {
         totalInclTax: string | null;
         verificationCode: string;
         verificationCodeUrl: string | null;
+        receiptDataHash: string;
         pdfUrl: string | null;
         pdfStatus: string | null;
     }[]>;
@@ -88,6 +90,7 @@ export declare class ReceiptsController {
         totalInclTax: string | null;
         verificationCode: string;
         verificationCodeUrl: string | null;
+        receiptDataHash: string;
         pdfUrl: string | null;
         pdfStatus: string | null;
     }[]>;
@@ -124,7 +127,9 @@ export declare class ReceiptsController {
         totalInclTax: string | null;
         verificationCode: string;
         verificationCodeUrl: string | null;
+        receiptDataHash: string;
         pdfUrl: string | null;
         pdfStatus: string | null;
     }>;
+    deleteReceipt(id: string, req: any): Promise<void>;
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, UseGuards, Request, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UseGuards, Request, UnauthorizedException, NotFoundException, Delete, HttpCode, HttpStatus } from '@nestjs/common';
 import { ReceiptsService } from './receipts.service';
 import { GetReceiptDto } from './dto/get-receipt.dto';
 import { Roles } from 'src/auth/roles.decorator';
@@ -57,5 +57,17 @@ export class ReceiptsController {
     }
 
     return receipt;
+  }
+
+  @Delete(':id')
+  @Roles(Role.User, Role.Admin)
+  @HttpCode(HttpStatus.NO_CONTENT) // Return 204 No Content on success
+  async deleteReceipt(@Param('id') id: string, @Request() req) {
+    const receiptId = parseInt(id, 10);
+    if (isNaN(receiptId)) {
+      throw new NotFoundException(`Invalid receipt ID: ${id}`);
+    }
+
+    await this.receiptsService.deleteReceipt(receiptId, req.user);
   }
 }

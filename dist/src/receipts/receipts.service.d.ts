@@ -46,6 +46,7 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         totalInclTax: string | null;
         verificationCode: string;
         verificationCodeUrl: string | null;
+        receiptDataHash: string;
         pdfUrl: string | null;
         pdfStatus: string | null;
     }[]>;
@@ -75,6 +76,7 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         totalInclTax: string | null;
         verificationCode: string;
         verificationCodeUrl: string | null;
+        receiptDataHash: string;
         pdfUrl: string | null;
         pdfStatus: string | null;
     }[]>;
@@ -112,6 +114,7 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         totalInclTax: string | null;
         verificationCode: string;
         verificationCodeUrl: string | null;
+        receiptDataHash: string;
         pdfUrl: string | null;
         pdfStatus: string | null;
     } | null>;
@@ -142,8 +145,13 @@ export declare class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         totalInclTax: string | null;
         verificationCode: string;
         verificationCodeUrl: string | null;
+        receiptDataHash: string;
         pdfUrl: string | null;
         pdfStatus: string | null;
     }[]>;
+    deleteReceipt(receiptId: number, user: {
+        userId: string;
+        role: string;
+    }): Promise<void>;
 }
 export {};

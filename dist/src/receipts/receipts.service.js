@@ -24,6 +24,7 @@ const async_mutex_1 = require("async-mutex");
 const pdf_generator_service_1 = require("./pdf-generator.service");
 const scraper_service_1 = require("./scraper.service");
 const pdf_queue_service_1 = require("./pdf-queue.service");
+const crypto = require("crypto");
 function safeClosePage(page) {
     if (page) {
         return page.close().catch((err) => {
@@ -173,10 +174,15 @@ let ReceiptsService = class ReceiptsService {
                 console.log('[ReceiptsService] Step 1: Scraping receipt data...');
                 const scraped = await this.scraper.scrapeReceipt(page, verificationCode, receiptTime, traVerifyUrl);
                 console.log('[ReceiptsService] Step 2: Scraping successful. Preparing to save to DB.');
+                const receiptDataString = JSON.stringify({
+                    details: scraped.details,
+                    items: scraped.items,
+                    totals: scraped.totalAmounts,
+                });
+                const receiptDataHash = crypto.createHash('sha256').update(receiptDataString).digest('hex');
                 const newReceipt = {
                     userId,
-                    verificationCode,
-                    receiptTime,
+                    receiptDataHash,
                     companyName: scraped.companyName,
                     poBox: scraped.poBox,
                     mobile: scraped.mobile,
@@ -195,12 +201,21 @@ let ReceiptsService = class ReceiptsService {
                     totalExclTax: scraped.totalAmounts.find(t => t.label === 'TOTAL EXCL OF TAX:')?.amount || '0',
                     totalTax: scraped.totalAmounts.find(t => t.label === 'TOTAL TAX:')?.amount || '0',
                     totalInclTax: scraped.totalAmounts.find(t => t.label === 'TOTAL INCL OF TAX:')?.amount || '0',
+                    verificationCode: verificationCode,
                     verificationCodeUrl: `${traVerifyUrl}/${verificationCode}`,
                     pdfStatus: 'pending',
                 };
                 console.log('[ReceiptsService] Step 3: Inserting main receipt into database...');
-                const result = await this.db.insert(schema_1.receipts).values(newReceipt).returning();
-                const insertedReceipt = result[0];
+                let insertedReceipt;
+                try {
+                    [insertedReceipt] = await this.db.insert(schema_1.receipts).values(newReceipt).returning();
+                }
+                catch (error) {
+                    if (error.code === '23505') {
+                        throw new common_1.ConflictException('This receipt has already been saved to your account.');
+                    }
+                    throw error;
+                }
                 console.log(`[ReceiptsService] Step 4: Main receipt inserted with ID: ${insertedReceipt?.id}`);
                 if (!insertedReceipt) {
                     throw new common_1.InternalServerErrorException('Failed to save receipt to the database.');
@@ -290,6 +305,22 @@ let ReceiptsService = class ReceiptsService {
             ...receipt,
             items: itemsByReceipt.get(receipt.id) || []
         }));
+    }
+    async deleteReceipt(receiptId, user) {
+        console.log(`[ReceiptsService] Attempting to delete receipt with ID: ${receiptId}`);
+        const [receiptToDelete] = await this.db.select().from(schema_1.receipts).where((0, drizzle_orm_1.eq)(schema_1.receipts.id, receiptId));
+        if (!receiptToDelete) {
+            throw new common_1.NotFoundException(`Receipt with ID ${receiptId} not found.`);
+        }
+        if (user.role !== 'admin' && receiptToDelete.userId !== user.userId) {
+            throw new common_1.UnauthorizedException('You are not authorized to delete this receipt.');
+        }
+        if (receiptToDelete.pdfUrl) {
+            console.log(`[ReceiptsService] Deleting associated PDF file: ${receiptToDelete.pdfUrl}`);
+            await this.fileUploadService.deleteFile(receiptToDelete.pdfUrl);
+        }
+        await this.db.delete(schema_1.receipts).where((0, drizzle_orm_1.eq)(schema_1.receipts.id, receiptId));
+        console.log(`[ReceiptsService] Successfully deleted receipt with ID: ${receiptId}`);
     }
 };
 exports.ReceiptsService = ReceiptsService;

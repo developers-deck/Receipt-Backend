@@ -20,9 +20,11 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -u jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:node": "node test-node.js",
     "migrate": "pnpm exec drizzle-kit push:pg",
     "generate": "pnpm exec drizzle-kit generate:pg",
     "studio": "pnpm exec drizzle-kit studio",
+    "db:migrate": "pnpm exec ts-node -r tsconfig-paths/register src/db/migrate.ts",
     "postinstall": "playwright install --with-deps && playwright install chromium"
   },
   "dependencies": {

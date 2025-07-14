@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, varchar, integer, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, varchar, integer, uuid, uniqueIndex } from 'drizzle-orm/pg-core';
 
 // Users Table: Stores user credentials and roles
 export const users = pgTable('users', {
@@ -12,7 +12,7 @@ export const users = pgTable('users', {
 // Receipts Table: Stores all scraped receipt data
 export const receipts = pgTable('receipts', {
   id: serial('id').primaryKey(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(), // Reference UUID
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   companyName: text('company_name'),
   poBox: text('po_box'),
   mobile: text('mobile'),
@@ -32,11 +32,16 @@ export const receipts = pgTable('receipts', {
   totalExclTax: text('total_excl_tax'),
   totalTax: text('total_tax'),
   totalInclTax: text('total_incl_tax'),
-  verificationCode: text('verification_code').notNull().unique(),
+  verificationCode: text('verification_code').notNull(),
   verificationCodeUrl: text('verification_code_url'),
-  pdfUrl: text('pdf_url'), // Link to the PDF stored in Backblaze B2
-  pdfStatus: text('pdf_status').default('pending'), // 'pending' | 'processing' | 'done' | 'failed'
+  receiptDataHash: text('receipt_data_hash').notNull(),
+  pdfUrl: text('pdf_url'),
+  pdfStatus: text('pdf_status').default('pending'),
   createdAt: timestamp('created_at').defaultNow(),
+}, (table) => {
+  return {
+    userReceiptUnique: uniqueIndex('user_receipt_unique_idx').on(table.userId, table.receiptDataHash),
+  };
 });
 
 // Purchased Items Table: Stores individual items from each receipt
