@@ -5,6 +5,7 @@ import { receipts } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
+import { chromium, Browser } from 'playwright';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -29,17 +30,20 @@ const fileUploadService = new FileUploadService(new MockConfigService() as any);
 const pdfGenerator = new PdfGeneratorService();
 const pdfQueue = new PdfQueueService();
 
-async function processJob(job: PdfJob) {
+let browser: Browser | null = null;
+
+async function processJob(job: PdfJob, browser: Browser) {
   try {
     console.log(`Processing PDF job for receiptId: ${job.receiptId}`);
     // Set status to 'processing'
     await db.update(receipts).set({ pdfStatus: 'processing' }).where(eq(receipts.id, job.receiptId));
     // Generate PDF
     const htmlContent = await pdfGenerator.generateReceiptPdf(job.receiptData);
-    // Use Playwright or Puppeteer to render PDF (simulate here)
-    // const pdfBuffer = await renderPdf(htmlContent);
-    // For demo, just use the HTML as a buffer
-    const pdfBuffer = Buffer.from(htmlContent, 'utf-8');
+    // Use Playwright to render the PDF
+    const page = await browser.newPage();
+    await page.setContent(htmlContent, { waitUntil: 'networkidle' });
+    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+    await page.close();
     // Upload PDF
     const pdfUrl = await fileUploadService.upload(pdfBuffer, 'application/pdf');
     // Update receipt with PDF URL and status 'done'
@@ -52,15 +56,37 @@ async function processJob(job: PdfJob) {
   }
 }
 
-async function workerLoop() {
+async function startWorker() {
+  console.log('Initializing browser for worker...');
+  browser = await chromium.launch({
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
+  console.log('Browser initialized.');
+
+  // Graceful shutdown
+  process.on('SIGINT', async () => {
+    console.log('Closing browser...');
+    if (browser) {
+      await browser.close();
+    }
+    process.exit(0);
+  });
+
+  await workerLoop(browser);
+}
+
+async function workerLoop(browser: Browser) {
   while (true) {
     const job = await pdfQueue.dequeueJob();
     if (job) {
-      await processJob(job);
+      await processJob(job, browser);
     } else {
       await new Promise(res => setTimeout(res, 5000)); // Wait before polling again
     }
   }
 }
 
-workerLoop(); 
+startWorker().catch(err => {
+  console.error('Worker failed to start:', err);
+  process.exit(1);
+}); 
