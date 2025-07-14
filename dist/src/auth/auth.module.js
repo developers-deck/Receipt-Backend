@@ -27,15 +27,36 @@ exports.AuthModule = AuthModule = __decorate([
             config_1.ConfigModule,
             jwt_1.JwtModule.registerAsync({
                 imports: [config_1.ConfigModule],
-                useFactory: async (configService) => ({
-                    secret: configService.get('JWT_SECRET'),
-                    signOptions: { expiresIn: '60m' },
-                }),
+                useFactory: async (configService) => {
+                    const jwtSecret = configService.get('JWT_SECRET');
+                    if (!jwtSecret) {
+                        throw new Error('JWT_SECRET environment variable is not set');
+                    }
+                    return {
+                        secret: jwtSecret,
+                        signOptions: { expiresIn: '60m' },
+                    };
+                },
                 inject: [config_1.ConfigService],
             }),
         ],
         controllers: [auth_controller_1.AuthController],
-        providers: [auth_service_1.AuthService, local_strategy_1.LocalStrategy, jwt_strategy_1.JwtStrategy],
+        providers: [
+            auth_service_1.AuthService,
+            local_strategy_1.LocalStrategy,
+            jwt_strategy_1.JwtStrategy,
+            {
+                provide: 'JWT_SECRET',
+                useFactory: (configService) => {
+                    const secret = configService.get('JWT_SECRET');
+                    if (!secret) {
+                        throw new Error('JWT_SECRET environment variable is not set');
+                    }
+                    return secret;
+                },
+                inject: [config_1.ConfigService],
+            },
+        ],
         exports: [auth_service_1.AuthService],
     })
 ], AuthModule);

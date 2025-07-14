@@ -8,5 +8,6 @@ import { FileUploadModule } from '../file-upload/file-upload.module';
   imports: [DbModule, FileUploadModule],
   controllers: [ReceiptsController],
   providers: [ReceiptsService],
+  exports: [ReceiptsService],
 })
 export class ReceiptsModule {}

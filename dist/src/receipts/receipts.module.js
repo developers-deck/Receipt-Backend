@@ -20,6 +20,7 @@ exports.ReceiptsModule = ReceiptsModule = __decorate([
         imports: [db_module_1.DbModule, file_upload_module_1.FileUploadModule],
         controllers: [receipts_controller_1.ReceiptsController],
         providers: [receipts_service_1.ReceiptsService],
+        exports: [receipts_service_1.ReceiptsService],
     })
 ], ReceiptsModule);
 //# sourceMappingURL=receipts.module.js.map
