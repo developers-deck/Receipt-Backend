@@ -38,6 +38,9 @@ COPY --from=builder /app/node_modules ./node_modules
 # Copy the built application from the builder stage
 COPY --from=builder /app/dist ./dist
 
+# Copy the .env file from the builder stage
+COPY --from=builder /app/.env ./.env
+
 # The Playwright image comes with browsers pre-installed, so we don't
 # need to set ENV vars like PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD.
 # The image is also configured to find the browsers automatically.
