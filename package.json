@@ -13,7 +13,7 @@
     "start:dev": "pnpm exec nest start --watch",
     "start:debug": "pnpm exec nest start --debug --watch",
     "start:prod": "node dist/src/main.js",
-    "start:worker": "node -r ts-node/register src/receipts/pdf-worker.ts",
+    "start:worker": "node -r ts-node/register -r tsconfig-paths/register src/receipts/pdf-worker.ts",
     "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
