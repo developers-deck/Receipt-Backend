@@ -135,11 +135,37 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async getReceipt(verificationCode: string, receiptTime: string, userId: string): Promise<any> {
-    if (!this.browser) {
-      throw new ServiceUnavailableException('Browser is not initialized.');
+    if (!this.browser || !this.browser.isConnected()) {
+      console.log('Browser is not connected. Re-initializing...');
+      await this.initializeBrowser();
+      if (!this.browser) {
+        throw new ServiceUnavailableException('Failed to initialize browser after re-attempt.');
+      }
     }
-    const page = await this.browser.newPage();
+
+    let page: Page | null = null;
     try {
+      // First check if browser is connected, and re-initialize if not.
+      if (!this.browser || !this.browser.isConnected()) {
+        console.log('Browser is not connected. Re-initializing...');
+        await this.initializeBrowser();
+        if (!this.browser) {
+          throw new ServiceUnavailableException('Failed to initialize browser after re-attempt.');
+        }
+      }
+
+      try {
+        // Attempt to create a new page
+        page = await this.browser.newPage();
+      } catch (error) {
+        // If it fails, it's likely the browser disconnected just now. Re-initialize and retry once.
+        console.error('Failed to create new page, browser might have disconnected. Retrying...', error);
+        await this.initializeBrowser();
+        if (!this.browser) {
+          throw new ServiceUnavailableException('Failed to re-initialize browser for retry.');
+        }
+        page = await this.browser.newPage();
+      }
       const traVerifyUrl = this.configService.get<string>('TRA_VERIFY_URL') || '';
       const scraped = await this.scraper.scrapeReceipt(page, verificationCode, receiptTime, traVerifyUrl);
 
@@ -188,10 +214,19 @@ export class ReceiptsService implements OnModuleInit, OnModuleDestroy {
         }
       }
 
-      await this.pdfQueue.enqueueJob({ receiptId: insertedReceipt.id, receiptData: { ...insertedReceipt, items: scraped.items } });
+      const fullReceiptDataForPdf = {
+        ...insertedReceipt,
+        ...scraped.details, // Spread all the details for the PDF
+        items: scraped.items,
+        totalAmounts: scraped.totalAmounts,
+      };
+
+      await this.pdfQueue.enqueueJob({ receiptId: insertedReceipt.id, receiptData: fullReceiptDataForPdf });
       return { status: 'queued', receiptId: insertedReceipt.id };
     } finally {
-      await safeClosePage(page);
+      if (page) {
+        await safeClosePage(page);
+      }
     }
   }
 

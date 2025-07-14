@@ -141,11 +141,33 @@ let ReceiptsService = class ReceiptsService {
         }));
     }
     async getReceipt(verificationCode, receiptTime, userId) {
-        if (!this.browser) {
-            throw new common_1.ServiceUnavailableException('Browser is not initialized.');
+        if (!this.browser || !this.browser.isConnected()) {
+            console.log('Browser is not connected. Re-initializing...');
+            await this.initializeBrowser();
+            if (!this.browser) {
+                throw new common_1.ServiceUnavailableException('Failed to initialize browser after re-attempt.');
+            }
         }
-        const page = await this.browser.newPage();
+        let page = null;
         try {
+            if (!this.browser || !this.browser.isConnected()) {
+                console.log('Browser is not connected. Re-initializing...');
+                await this.initializeBrowser();
+                if (!this.browser) {
+                    throw new common_1.ServiceUnavailableException('Failed to initialize browser after re-attempt.');
+                }
+            }
+            try {
+                page = await this.browser.newPage();
+            }
+            catch (error) {
+                console.error('Failed to create new page, browser might have disconnected. Retrying...', error);
+                await this.initializeBrowser();
+                if (!this.browser) {
+                    throw new common_1.ServiceUnavailableException('Failed to re-initialize browser for retry.');
+                }
+                page = await this.browser.newPage();
+            }
             const traVerifyUrl = this.configService.get('TRA_VERIFY_URL') || '';
             const scraped = await this.scraper.scrapeReceipt(page, verificationCode, receiptTime, traVerifyUrl);
             const newReceipt = {
@@ -189,11 +211,19 @@ let ReceiptsService = class ReceiptsService {
                     await this.db.insert(schema_1.purchasedItems).values(purchasedItemsToInsert);
                 }
             }
-            await this.pdfQueue.enqueueJob({ receiptId: insertedReceipt.id, receiptData: { ...insertedReceipt, items: scraped.items } });
+            const fullReceiptDataForPdf = {
+                ...insertedReceipt,
+                ...scraped.details,
+                items: scraped.items,
+                totalAmounts: scraped.totalAmounts,
+            };
+            await this.pdfQueue.enqueueJob({ receiptId: insertedReceipt.id, receiptData: fullReceiptDataForPdf });
             return { status: 'queued', receiptId: insertedReceipt.id };
         }
         finally {
-            await safeClosePage(page);
+            if (page) {
+                await safeClosePage(page);
+            }
         }
     }
     async getReceiptById(id) {
