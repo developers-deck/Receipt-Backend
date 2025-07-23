@@ -20,7 +20,7 @@ export class ReceiptsService {
     private readonly fileUploadService: FileUploadService,
     private readonly pdfGenerator: PdfGeneratorService,
     private readonly playwrightService: PlaywrightService,
-  ) {}
+  ) { }
 
   // 1. Create a new receipt (scrape and save)
   /**
@@ -243,7 +243,7 @@ export class ReceiptsService {
    */
   async retryPdfGeneration(receiptId: number, userId: string) {
     this.logger.log(`Retrying PDF generation for receipt ID: ${receiptId}`);
-    
+
     // Check if receipt exists and belongs to the user
     const receipt = await this.db.query.receipts.findFirst({
       where: and(eq(receipts.id, receiptId), eq(receipts.userId, userId)),
@@ -256,9 +256,9 @@ export class ReceiptsService {
     // Check if receipt is in a failed state
     if (receipt.pdfStatus !== 'failed' && receipt.pdfStatus !== 'retry_pending') {
       this.logger.warn(`Cannot retry PDF generation for receipt ID: ${receiptId} with status: ${receipt.pdfStatus}`);
-      return { 
-        status: 'error', 
-        message: `Cannot retry PDF generation for receipt with status: ${receipt.pdfStatus}. Only failed or retry_pending receipts can be retried.` 
+      return {
+        status: 'error',
+        message: `Cannot retry PDF generation for receipt with status: ${receipt.pdfStatus}. Only failed or retry_pending receipts can be retried.`
       };
     }
 
@@ -271,36 +271,40 @@ export class ReceiptsService {
     const browser = await this.playwrightService.getBrowser();
     const page = await browser.newPage();
     let scraped;
-    
+
     try {
       const traVerifyUrl = process.env.TRA_VERIFY_URL;
       if (!traVerifyUrl) {
         throw new Error('TRA_VERIFY_URL environment variable is not set.');
       }
-      
+
       // Re-scrape the receipt data
+      if (!receipt.receiptTime) {
+        throw new Error(`Receipt ${receipt.id} has no receiptTime - cannot retry PDF generation`);
+      }
+
       scraped = await this.scraper.scrapeReceipt(
-        page, 
-        receipt.verificationCode, 
-        receipt.receiptTime, 
+        page,
+        receipt.verificationCode,
+        receipt.receiptTime,
         traVerifyUrl
       );
-      
+
       // Re-enqueue the job
-      await this.pdfQueue.enqueueJob({ 
-        receiptId: receipt.id, 
-        receiptData: { ...receipt, ...scraped } 
+      await this.pdfQueue.enqueueJob({
+        receiptId: receipt.id,
+        receiptData: { ...receipt, ...scraped }
       });
-      
+
       return { status: 'queued', receiptId: receipt.id };
     } catch (error) {
       this.logger.error(`Failed to retry PDF generation for receipt ID: ${receiptId}`, error);
-      
+
       // Update receipt status back to failed
       await this.db.update(receipts)
         .set({ pdfStatus: 'failed' })
         .where(eq(receipts.id, receiptId));
-      
+
       throw new ServiceUnavailableException(`Failed to retry PDF generation: ${error.message}`);
     } finally {
       await page.close();
@@ -314,7 +318,7 @@ export class ReceiptsService {
    */
   async retryAllFailedPdfGenerations(userId: string) {
     this.logger.log(`Retrying all failed PDF generations for user ID: ${userId}`);
-    
+
     // Find all failed receipts for this user
     const failedReceipts = await this.db.query.receipts.findMany({
       where: and(
@@ -341,36 +345,40 @@ export class ReceiptsService {
         // Get the full receipt data needed for PDF generation
         const browser = await this.playwrightService.getBrowser();
         const page = await browser.newPage();
-        
+
         try {
           const traVerifyUrl = process.env.TRA_VERIFY_URL;
           if (!traVerifyUrl) {
             throw new Error('TRA_VERIFY_URL environment variable is not set.');
           }
-          
+
           // Re-scrape the receipt data
+          if (!receipt.receiptTime) {
+            throw new Error(`Receipt ${receipt.id} has no receiptTime - cannot retry PDF generation`);
+          }
+
           const scraped = await this.scraper.scrapeReceipt(
-            page, 
-            receipt.verificationCode, 
-            receipt.receiptTime, 
+            page,
+            receipt.verificationCode,
+            receipt.receiptTime,
             traVerifyUrl
           );
-          
+
           // Re-enqueue the job
-          await this.pdfQueue.enqueueJob({ 
-            receiptId: receipt.id, 
-            receiptData: { ...receipt, ...scraped } 
+          await this.pdfQueue.enqueueJob({
+            receiptId: receipt.id,
+            receiptData: { ...receipt, ...scraped }
           });
-          
+
           successCount++;
         } catch (error) {
           this.logger.error(`Failed to retry PDF generation for receipt ID: ${receipt.id}`, error);
-          
+
           // Update receipt status back to failed
           await this.db.update(receipts)
             .set({ pdfStatus: 'failed' })
             .where(eq(receipts.id, receipt.id));
-          
+
           failureCount++;
         } finally {
           await page.close();
@@ -381,8 +389,8 @@ export class ReceiptsService {
       }
     }
 
-    return { 
-      status: 'success', 
+    return {
+      status: 'success',
       message: `Queued ${successCount} receipts for PDF generation retry. Failed to queue ${failureCount} receipts.`,
       count: successCount
     };

@@ -57,6 +57,14 @@ let ReceiptsController = ReceiptsController_1 = class ReceiptsController {
         const user = { id: req.user.id };
         return this.receiptsService.getUserStats(user);
     }
+    async retryPdfGeneration(id, req) {
+        this.logger.log(`Retry PDF generation requested for receipt ID: ${id} by user: ${req.user.id}`);
+        return this.receiptsService.retryPdfGeneration(+id, req.user.id);
+    }
+    async retryAllFailedPdfGenerations(req) {
+        this.logger.log(`Retry all failed PDF generations requested by user: ${req.user.id}`);
+        return this.receiptsService.retryAllFailedPdfGenerations(req.user.id);
+    }
 };
 exports.ReceiptsController = ReceiptsController;
 __decorate([
@@ -130,6 +138,25 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], ReceiptsController.prototype, "getMyStats", null);
+__decorate([
+    (0, common_1.Post)(':id/retry-pdf'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.User, role_enum_1.Role.Admin),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], ReceiptsController.prototype, "retryPdfGeneration", null);
+__decorate([
+    (0, common_1.Post)('mine/retry-all-pdfs'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.User, role_enum_1.Role.Admin),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ReceiptsController.prototype, "retryAllFailedPdfGenerations", null);
 exports.ReceiptsController = ReceiptsController = ReceiptsController_1 = __decorate([
     (0, common_1.Controller)('receipts'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

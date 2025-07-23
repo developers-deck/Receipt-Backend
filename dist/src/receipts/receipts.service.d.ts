@@ -12,6 +12,7 @@ export declare class ReceiptsService {
     private readonly fileUploadService;
     private readonly pdfGenerator;
     private readonly playwrightService;
+    private readonly logger;
     constructor(db: DbType, scraper: ScraperService, pdfQueue: PdfQueueService, fileUploadService: FileUploadService, pdfGenerator: PdfGeneratorService, playwrightService: PlaywrightService);
     createReceipt(getReceiptDto: GetReceiptDto, userId: string): Promise<{
         status: string;
@@ -129,5 +130,19 @@ export declare class ReceiptsService {
             customerName: string | null;
         }[];
         companyTax: Record<string, number>;
+    }>;
+    retryPdfGeneration(receiptId: number, userId: string): Promise<{
+        status: string;
+        message: string;
+        receiptId?: undefined;
+    } | {
+        status: string;
+        receiptId: number;
+        message?: undefined;
+    }>;
+    retryAllFailedPdfGenerations(userId: string): Promise<{
+        status: string;
+        message: string;
+        count: number;
     }>;
 }

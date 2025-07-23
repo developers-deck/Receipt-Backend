@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var ReceiptsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReceiptsService = void 0;
 const common_1 = require("@nestjs/common");
@@ -23,13 +24,14 @@ const crypto = require("crypto");
 const file_upload_service_1 = require("../file-upload/file-upload.service");
 const pdf_generator_service_1 = require("./pdf-generator.service");
 const playwright_service_1 = require("../playwright/playwright.service");
-let ReceiptsService = class ReceiptsService {
+let ReceiptsService = ReceiptsService_1 = class ReceiptsService {
     db;
     scraper;
     pdfQueue;
     fileUploadService;
     pdfGenerator;
     playwrightService;
+    logger = new common_1.Logger(ReceiptsService_1.name);
     constructor(db, scraper, pdfQueue, fileUploadService, pdfGenerator, playwrightService) {
         this.db = db;
         this.scraper = scraper;
@@ -221,9 +223,110 @@ let ReceiptsService = class ReceiptsService {
         });
         return { sum, receipts: receiptsData, companyTax };
     }
+    async retryPdfGeneration(receiptId, userId) {
+        this.logger.log(`Retrying PDF generation for receipt ID: ${receiptId}`);
+        const receipt = await this.db.query.receipts.findFirst({
+            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.receipts.id, receiptId), (0, drizzle_orm_1.eq)(schema_1.receipts.userId, userId)),
+        });
+        if (!receipt) {
+            throw new common_1.NotFoundException(`Receipt with ID ${receiptId} not found or does not belong to this user`);
+        }
+        if (receipt.pdfStatus !== 'failed' && receipt.pdfStatus !== 'retry_pending') {
+            this.logger.warn(`Cannot retry PDF generation for receipt ID: ${receiptId} with status: ${receipt.pdfStatus}`);
+            return {
+                status: 'error',
+                message: `Cannot retry PDF generation for receipt with status: ${receipt.pdfStatus}. Only failed or retry_pending receipts can be retried.`
+            };
+        }
+        await this.db.update(schema_1.receipts)
+            .set({ pdfStatus: 'pending' })
+            .where((0, drizzle_orm_1.eq)(schema_1.receipts.id, receiptId));
+        const browser = await this.playwrightService.getBrowser();
+        const page = await browser.newPage();
+        let scraped;
+        try {
+            const traVerifyUrl = process.env.TRA_VERIFY_URL;
+            if (!traVerifyUrl) {
+                throw new Error('TRA_VERIFY_URL environment variable is not set.');
+            }
+            if (!receipt.receiptTime) {
+                throw new Error(`Receipt ${receipt.id} has no receiptTime - cannot retry PDF generation`);
+            }
+            scraped = await this.scraper.scrapeReceipt(page, receipt.verificationCode, receipt.receiptTime, traVerifyUrl);
+            await this.pdfQueue.enqueueJob({
+                receiptId: receipt.id,
+                receiptData: { ...receipt, ...scraped }
+            });
+            return { status: 'queued', receiptId: receipt.id };
+        }
+        catch (error) {
+            this.logger.error(`Failed to retry PDF generation for receipt ID: ${receiptId}`, error);
+            await this.db.update(schema_1.receipts)
+                .set({ pdfStatus: 'failed' })
+                .where((0, drizzle_orm_1.eq)(schema_1.receipts.id, receiptId));
+            throw new common_1.ServiceUnavailableException(`Failed to retry PDF generation: ${error.message}`);
+        }
+        finally {
+            await page.close();
+        }
+    }
+    async retryAllFailedPdfGenerations(userId) {
+        this.logger.log(`Retrying all failed PDF generations for user ID: ${userId}`);
+        const failedReceipts = await this.db.query.receipts.findMany({
+            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.receipts.userId, userId), (0, drizzle_orm_1.sql) `${schema_1.receipts.pdfStatus} IN ('failed', 'retry_pending')`),
+        });
+        if (failedReceipts.length === 0) {
+            return { status: 'success', message: 'No failed receipts found to retry', count: 0 };
+        }
+        let successCount = 0;
+        let failureCount = 0;
+        for (const receipt of failedReceipts) {
+            try {
+                await this.db.update(schema_1.receipts)
+                    .set({ pdfStatus: 'pending' })
+                    .where((0, drizzle_orm_1.eq)(schema_1.receipts.id, receipt.id));
+                const browser = await this.playwrightService.getBrowser();
+                const page = await browser.newPage();
+                try {
+                    const traVerifyUrl = process.env.TRA_VERIFY_URL;
+                    if (!traVerifyUrl) {
+                        throw new Error('TRA_VERIFY_URL environment variable is not set.');
+                    }
+                    if (!receipt.receiptTime) {
+                        throw new Error(`Receipt ${receipt.id} has no receiptTime - cannot retry PDF generation`);
+                    }
+                    const scraped = await this.scraper.scrapeReceipt(page, receipt.verificationCode, receipt.receiptTime, traVerifyUrl);
+                    await this.pdfQueue.enqueueJob({
+                        receiptId: receipt.id,
+                        receiptData: { ...receipt, ...scraped }
+                    });
+                    successCount++;
+                }
+                catch (error) {
+                    this.logger.error(`Failed to retry PDF generation for receipt ID: ${receipt.id}`, error);
+                    await this.db.update(schema_1.receipts)
+                        .set({ pdfStatus: 'failed' })
+                        .where((0, drizzle_orm_1.eq)(schema_1.receipts.id, receipt.id));
+                    failureCount++;
+                }
+                finally {
+                    await page.close();
+                }
+            }
+            catch (error) {
+                this.logger.error(`Error processing receipt ID: ${receipt.id}`, error);
+                failureCount++;
+            }
+        }
+        return {
+            status: 'success',
+            message: `Queued ${successCount} receipts for PDF generation retry. Failed to queue ${failureCount} receipts.`,
+            count: successCount
+        };
+    }
 };
 exports.ReceiptsService = ReceiptsService;
-exports.ReceiptsService = ReceiptsService = __decorate([
+exports.ReceiptsService = ReceiptsService = ReceiptsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)(db_provider_1.DB_PROVIDER)),
     __metadata("design:paramtypes", [Object, scraper_service_1.ScraperService,

@@ -140,4 +140,18 @@ export declare class ReceiptsController {
         }[];
         companyTax: Record<string, number>;
     }>;
+    retryPdfGeneration(id: string, req: any): Promise<{
+        status: string;
+        message: string;
+        receiptId?: undefined;
+    } | {
+        status: string;
+        receiptId: number;
+        message?: undefined;
+    }>;
+    retryAllFailedPdfGenerations(req: any): Promise<{
+        status: string;
+        message: string;
+        count: number;
+    }>;
 }
