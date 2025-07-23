@@ -14,6 +14,7 @@ export interface ScrapedReceiptData {
   totalAmounts: Array<{ label: string; amount: string }>;
   receiptDate: string;
   receiptTime: string;
+  verificationUrl?: string;
 }
 
 @Injectable()
@@ -25,7 +26,7 @@ export class ScraperService {
     verificationCode: string,
     receiptTime: string,
     traVerifyUrl: string,
-  ): Promise<ScrapedReceiptData> {
+  ): Promise<ScrapedReceiptData & { verificationUrl: string }> {
     this.logger.log(`Starting to scrape receipt for code: ${verificationCode}`);
     try {
       const url = `${traVerifyUrl}/${verificationCode}`;
@@ -63,7 +64,12 @@ export class ScraperService {
 
       const scrapedData = await this.extractReceiptData(page);
       this.logger.log(`Successfully scraped receipt for code: ${verificationCode}`);
-      return scrapedData;
+      
+      // Add the verification URL to the scraped data
+      return {
+        ...scrapedData,
+        verificationUrl: url
+      };
     } catch (error) {
       this.logger.error(
         `Error scraping receipt for code ${verificationCode}: ${error.message}`,

@@ -122,4 +122,22 @@ export declare class ReceiptsController {
     }>;
     deleteReceipt(id: string, req: any): Promise<void>;
     downloadPdf(id: string, req: any, res: ExpressResponse): Promise<void>;
+    getMyStats(req: any): Promise<{
+        sum: {
+            totalTax: number;
+            totalInclTax: number;
+            totalExclTax: number;
+        };
+        receipts: {
+            id: number;
+            companyName: string | null;
+            totalTax: number;
+            totalInclTax: number;
+            totalExclTax: number;
+            receiptDate: string | null;
+            receiptNo: string | null;
+            customerName: string | null;
+        }[];
+        companyTax: Record<string, number>;
+    }>;
 }

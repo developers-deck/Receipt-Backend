@@ -3,7 +3,11 @@ import * as QRCode from 'qrcode';
 export class PdfGeneratorService {
   async generateReceiptPdf(receiptData: any): Promise<string> {
     const traLogoUrl = 'https://f004.backblazeb2.com/file/receipts-tanzania/tralogoss.png';
-    const qrCodeDataUrl = await QRCode.toDataURL(receiptData.verificationCodeUrl || '');
+    
+    // Ensure we have a valid verification URL for the QR code
+    const verificationUrl = receiptData.verificationCodeUrl || receiptData.verificationUrl || `https://verify.tra.go.tz/${receiptData.verificationCode}`;
+    console.log('Using verification URL for QR code:', verificationUrl);
+    const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl);
 
     const itemsHtml = (receiptData.items || []).map(item => `
       <tr>

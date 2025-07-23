@@ -87,6 +87,7 @@ let ReceiptsService = class ReceiptsService {
             verificationCodeUrl: scraped.verificationUrl,
             pdfStatus: 'pending',
         };
+        console.log('newReceipt:', newReceipt);
         let insertedReceipt;
         try {
             const result = await this.db.insert(schema_1.receipts).values(newReceipt).returning();
@@ -96,6 +97,7 @@ let ReceiptsService = class ReceiptsService {
             if (error.code === '23505') {
                 throw new common_1.ConflictException('This receipt has already been saved to your account.');
             }
+            console.error('Error saving receipt to DB:', error);
             throw new common_1.InternalServerErrorException('Failed to save receipt to the database.');
         }
         if (scraped.items && scraped.items.length > 0) {
@@ -185,6 +187,39 @@ let ReceiptsService = class ReceiptsService {
         }
         const items = await this.db.select().from(schema_1.purchasedItems).where((0, drizzle_orm_1.eq)(schema_1.purchasedItems.receiptId, receiptId));
         return Buffer.from(await this.pdfGenerator.generateReceiptPdf({ ...receipt, items }));
+    }
+    async getUserStats(user) {
+        const receiptsList = await this.db.select().from(schema_1.receipts).where((0, drizzle_orm_1.eq)(schema_1.receipts.userId, user.id));
+        const parseNum = (val) => {
+            if (!val)
+                return 0;
+            return Number(val.replace(/,/g, ''));
+        };
+        const sum = receiptsList.reduce((acc, r) => {
+            acc.totalTax += parseNum(r.totalTax);
+            acc.totalInclTax += parseNum(r.totalInclTax);
+            acc.totalExclTax += parseNum(r.totalExclTax);
+            return acc;
+        }, { totalTax: 0, totalInclTax: 0, totalExclTax: 0 });
+        const receiptsData = receiptsList.map(r => ({
+            id: r.id,
+            companyName: r.companyName,
+            totalTax: parseNum(r.totalTax),
+            totalInclTax: parseNum(r.totalInclTax),
+            totalExclTax: parseNum(r.totalExclTax),
+            receiptDate: r.receiptDate,
+            receiptNo: r.receiptNo,
+            customerName: r.customerName,
+        }));
+        const companyTax = {};
+        receiptsList.forEach(r => {
+            const company = r.companyName || 'Unknown';
+            const tax = parseNum(r.totalTax);
+            if (!companyTax[company])
+                companyTax[company] = 0;
+            companyTax[company] += tax;
+        });
+        return { sum, receipts: receiptsData, companyTax };
     }
 };
 exports.ReceiptsService = ReceiptsService;

@@ -18,7 +18,8 @@ export class ReceiptsController {
   @Post()
   @Roles(Role.User, Role.Admin)
   async createReceipt(@Body() getReceiptDto: GetReceiptDto, @Request() req) {
-    const userId = req.user.sub;
+    const userId = req.user.id;
+    console.log('userId in controller:', userId); // Log userId before passing to service
     return this.receiptsService.createReceipt(getReceiptDto, userId);
   }
 

@@ -110,4 +110,24 @@ export declare class ReceiptsService {
         sub: string;
         role: string;
     }): Promise<Buffer>;
+    getUserStats(user: {
+        id: string;
+    }): Promise<{
+        sum: {
+            totalTax: number;
+            totalInclTax: number;
+            totalExclTax: number;
+        };
+        receipts: {
+            id: number;
+            companyName: string | null;
+            totalTax: number;
+            totalInclTax: number;
+            totalExclTax: number;
+            receiptDate: string | null;
+            receiptNo: string | null;
+            customerName: string | null;
+        }[];
+        companyTax: Record<string, number>;
+    }>;
 }

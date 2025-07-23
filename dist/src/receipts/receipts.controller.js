@@ -28,7 +28,8 @@ let ReceiptsController = ReceiptsController_1 = class ReceiptsController {
         this.receiptsService = receiptsService;
     }
     async createReceipt(getReceiptDto, req) {
-        const userId = req.user.sub;
+        const userId = req.user.id;
+        console.log('userId in controller:', userId);
         return this.receiptsService.createReceipt(getReceiptDto, userId);
     }
     async getAllReceipts(page = 1, limit = 10, companyName, customerName, tin) {
@@ -51,6 +52,10 @@ let ReceiptsController = ReceiptsController_1 = class ReceiptsController {
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=receipt-${id}.pdf`);
         res.send(pdfBuffer);
+    }
+    async getMyStats(req) {
+        const user = { id: req.user.id };
+        return this.receiptsService.getUserStats(user);
     }
 };
 exports.ReceiptsController = ReceiptsController;
@@ -117,6 +122,14 @@ __decorate([
     __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], ReceiptsController.prototype, "downloadPdf", null);
+__decorate([
+    (0, common_1.Get)('mine/stats'),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.User, role_enum_1.Role.Admin),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ReceiptsController.prototype, "getMyStats", null);
 exports.ReceiptsController = ReceiptsController = ReceiptsController_1 = __decorate([
     (0, common_1.Controller)('receipts'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

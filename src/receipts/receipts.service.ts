@@ -71,6 +71,7 @@ export class ReceiptsService {
       verificationCodeUrl: scraped.verificationUrl,
       pdfStatus: 'pending',
     };
+    console.log('newReceipt:', newReceipt); // Log the newReceipt object
 
     let insertedReceipt;
     try {
@@ -80,6 +81,7 @@ export class ReceiptsService {
       if (error.code === '23505') {
         throw new ConflictException('This receipt has already been saved to your account.');
       }
+      console.error('Error saving receipt to DB:', error); // Log the actual error
       throw new InternalServerErrorException('Failed to save receipt to the database.');
     }
 
