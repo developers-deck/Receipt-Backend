@@ -85,4 +85,22 @@ export class ReceiptsController {
     const user = { id: req.user.id };
     return this.receiptsService.getUserStats(user);
   }
+
+  // Retry PDF generation for a single receipt
+  @Post(':id/retry-pdf')
+  @Roles(Role.User, Role.Admin)
+  @HttpCode(HttpStatus.OK)
+  async retryPdfGeneration(@Param('id') id: string, @Request() req) {
+    this.logger.log(`Retry PDF generation requested for receipt ID: ${id} by user: ${req.user.id}`);
+    return this.receiptsService.retryPdfGeneration(+id, req.user.id);
+  }
+
+  // Retry PDF generation for all failed receipts
+  @Post('mine/retry-all-pdfs')
+  @Roles(Role.User, Role.Admin)
+  @HttpCode(HttpStatus.OK)
+  async retryAllFailedPdfGenerations(@Request() req) {
+    this.logger.log(`Retry all failed PDF generations requested by user: ${req.user.id}`);
+    return this.receiptsService.retryAllFailedPdfGenerations(req.user.id);
+  }
 }

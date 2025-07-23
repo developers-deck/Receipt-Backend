@@ -5,7 +5,20 @@ export class PdfGeneratorService {
     const traLogoUrl = 'https://f004.backblazeb2.com/file/receipts-tanzania/tralogoss.png';
     
     // Ensure we have a valid verification URL for the QR code
-    const verificationUrl = receiptData.verificationCodeUrl || receiptData.verificationUrl || `https://verify.tra.go.tz/${receiptData.verificationCode}`;
+    let verificationUrl;
+    
+    if (receiptData.verificationCodeUrl) {
+      verificationUrl = receiptData.verificationCodeUrl;
+    } else if (receiptData.verificationUrl) {
+      verificationUrl = receiptData.verificationUrl;
+    } else if (receiptData.verificationCode) {
+      verificationUrl = `https://verify.tra.go.tz/${receiptData.verificationCode}`;
+    } else {
+      // When verification code is not available, use the TRA verification URL directly
+      verificationUrl = 'https://verify.tra.go.tz/';
+      console.log('No verification code available, using base TRA verification URL');
+    }
+    
     console.log('Using verification URL for QR code:', verificationUrl);
     const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl);
 
@@ -114,7 +127,10 @@ export class PdfGeneratorService {
             </tbody>
           </table>
           <div class="divider"></div>
-          <div class="verification-code">RECEIPT VERIFICATION CODE<br/>${receiptData.verificationCode || ''}</div>
+          ${receiptData.verificationCode ? 
+            `<div class="verification-code">RECEIPT VERIFICATION CODE<br/>${receiptData.verificationCode}</div>` : 
+            `<div class="verification-code">VERIFICATION CODE NOT AVAILABLE</div>`
+          }
           <div class="qr-section">
             <img src="${qrCodeDataUrl}" alt="QR Code" />
           </div>

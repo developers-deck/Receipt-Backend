@@ -1,5 +1,5 @@
 import { Redis } from '@upstash/redis';
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { REDIS_CLIENT } from '../redis/redis.provider';
 
 export interface PdfJob {
@@ -10,6 +10,7 @@ export interface PdfJob {
 @Injectable()
 export class PdfQueueService {
   private readonly queueKey = 'pdf-jobs';
+  private readonly logger = new Logger(PdfQueueService.name);
 
   constructor(@Inject(REDIS_CLIENT) private redis: Redis) {}
 
@@ -48,5 +49,35 @@ export class PdfQueueService {
 
   async queueLength(): Promise<number> {
     return await this.redis.llen(this.queueKey);
+  }
+
+  /**
+   * Re-enqueue a job that previously failed
+   * @param job The job to re-enqueue
+   * @returns void
+   */
+  async requeueFailedJob(job: PdfJob): Promise<void> {
+    this.logger.log(`Re-enqueueing failed job for receiptId: ${job.receiptId}`);
+    await this.enqueueJob(job);
+  }
+
+  /**
+   * Re-enqueue all jobs with failed status
+   * @param failedJobs Array of failed jobs to re-enqueue
+   * @returns The number of jobs that were re-enqueued
+   */
+  async requeueAllFailedJobs(failedJobs: PdfJob[]): Promise<number> {
+    if (!failedJobs || failedJobs.length === 0) {
+      this.logger.log('No failed jobs to re-enqueue');
+      return 0;
+    }
+
+    this.logger.log(`Re-enqueueing ${failedJobs.length} failed jobs`);
+    
+    for (const job of failedJobs) {
+      await this.enqueueJob(job);
+    }
+
+    return failedJobs.length;
   }
 }
